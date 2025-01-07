@@ -12,14 +12,36 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             background-color: #e0f7fa;
             min-height: 100vh;
             color: #333;
         }
+        .home-button {
+            align-self: flex-start;
+            margin: 20px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            box-shadow: 0 4px #2e7d32;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .home-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px #1b5e20;
+        }
+        .home-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px #2e7d32;
+        }
         h1 {
             font-size: 2.5em;
-            margin: 20px 0 10px;
+            margin: 10px 0;
         }
         h2 {
             font-size: 1.5em;
@@ -73,6 +95,7 @@
     </style>
 </head>
 <body>
+    <a href="../index.html" class="home-button">Home</a>
     <h1>Breath of the Landscape</h1>
     <h2>A math website (that's like a game) for 7 to 8 year olds!!!</h2>
     <div class="feature-block">
