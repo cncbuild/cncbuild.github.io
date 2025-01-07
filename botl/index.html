@@ -1,1 +1,87 @@
-Welcome to Breath of the Landscape!
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breath of the Landscape</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #e0f7fa;
+            min-height: 100vh;
+            color: #333;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin: 20px 0 10px;
+        }
+        h2 {
+            font-size: 1.5em;
+            margin: 0 0 20px;
+        }
+        .feature-block {
+            width: 80%;
+            max-width: 600px;
+            height: 300px;
+            background-color: #c8e6c9;
+            border: 3px solid #81c784;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            text-align: center;
+            color: #388e3c;
+            margin-bottom: 30px;
+        }
+        .play-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        .arrow {
+            font-size: 2em;
+            color: #388e3c;
+            transform: rotate(-20deg);
+        }
+        .play-button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            box-shadow: 0 4px #2e7d32;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .play-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px #1b5e20;
+        }
+        .play-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <h1>Breath of the Landscape</h1>
+    <h2>A math website (that's like a game) for 7 to 8 year olds!!!</h2>
+    <div class="feature-block">
+        Game Area (Coming Soon)
+    </div>
+    <div class="play-section">
+        <div class="arrow">⬆</div>
+        <button class="play-button">Play</button>
+        <div class="arrow">⬆</div>
+    </div>
+</body>
+</html>
