@@ -88,6 +88,32 @@
             transform: translateY(2px);
             box-shadow: 0 2px #2e7d32;
         }
+        .hidden {
+    display: none;
+}
+
+#cutscene {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2em;
+    text-align: center;
+    padding: 20px;
+    z-index: 1000; /* Ensures it's on top */
+}
+
+.cutscene-text {
+    opacity: 0;
+    transition: opacity 2s ease-in-out;
+}
+
     </style>
 </head>
 <body>
@@ -95,10 +121,73 @@
     <h1>Breath of the Landscape</h1>
     <h2>A math website (that's like a game) for 7 to 8 year olds!!!</h2>
     <img src="botl-main-screen.png" alt="Breath of the Landscape Drawing" class="feature-image">
+    <div id="cutscene" class="hidden">
+    <div class="cutscene-text" id="cutscene-text"></div>
+</div>
+
     <div class="play-section">
         <div class="arrow">⬆</div>
         <button class="play-button">Play</button>
         <div class="arrow">⬆</div>
     </div>
+
+<script>
+    // Cutscene messages
+    const messages = [
+        "Two villages on Lava Island and Pig Cat Village had an Emerald split in half for each!",
+        "One day, a lava monster split Pig Cat's part in half!!!",
+        "This caused much trouble all around Pig Cat Village Island..."
+    ];
+
+    let currentMessageIndex = 0;
+
+    // Function to show the cutscene
+    function startCutscene() {
+        const cutscene = document.getElementById("cutscene");
+        const cutsceneText = document.getElementById("cutscene-text");
+        const playButton = document.querySelector(".play-button");
+
+        // Hide play button and other game elements
+        playButton.style.display = "none";
+
+        // Show cutscene
+        cutscene.classList.remove("hidden");
+
+        // Start showing messages
+        showNextMessage();
+    }
+
+    // Function to show the next message
+    function showNextMessage() {
+        const cutsceneText = document.getElementById("cutscene-text");
+        if (currentMessageIndex < messages.length) {
+            cutsceneText.innerText = messages[currentMessageIndex];
+            cutsceneText.style.opacity = 1;
+
+            setTimeout(() => {
+                cutsceneText.style.opacity = 0;
+                currentMessageIndex++;
+                setTimeout(showNextMessage, 2000); // Pause before next message
+            }, 4000); // Show each message for 4 seconds
+        } else {
+            endCutscene();
+        }
+    }
+
+    // Function to end the cutscene
+    function endCutscene() {
+        const cutscene = document.getElementById("cutscene");
+
+        // Hide cutscene
+        cutscene.classList.add("hidden");
+
+        // Start the game (replace this with game logic)
+        alert("Game begins!");
+    }
+
+    // Attach the cutscene to the Play button
+    document.querySelector(".play-button").addEventListener("click", startCutscene);
+</script>
+
 </body>
 </html>
