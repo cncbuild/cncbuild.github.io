@@ -166,6 +166,8 @@ align-self: flex-start;
     <p>Click the emeralds to collect them!</p>
     <div id="emeralds-container"></div>
     <p id="score">Score: 0</p>
+    <audio id="background-music" src="cryptic-scenery.mp3" loop></audio>
+    <p>Song: Umspannwerk by cryptic scenery, source: Free Music Archive with license CC BY-NC-SA</p>
 </div>
 
     <div class="play-section">
@@ -188,15 +190,16 @@ function startSlides() {
     const playButton = document.querySelector(".play-button");
     const imageContainer = document.querySelector(".image-container");
     const slides = document.getElementById("slides");
+    const backgroundMusic = document.getElementById("background-music"); // Select the audio element
 
     // Debugging output
     console.log("Play button:", playButton);
     console.log("Image container:", imageContainer);
     console.log("Slides container:", slides);
 
-    if (!playButton || !imageContainer || !slides) {
-        console.error("One or more elements (playButton, imageContainer, slides) are missing from the DOM.");
-        return; // Corrected: No code after return
+    if (!playButton || !imageContainer || !slides || !backgroundMusic) {
+        console.error("One or more elements (playButton, imageContainer, slides, backgroundMusic) are missing from the DOM.");
+        return;
     }
 
     console.log("Starting slides...");
@@ -205,6 +208,9 @@ function startSlides() {
     playButton.style.display = "none";
     imageContainer.style.display = "none";
     console.log("Play button and image container hidden.");
+
+    // Start background music
+    backgroundMusic.play();
 
     // Ensure all slides are hidden initially
     document.querySelectorAll(".slide").forEach((slide, index) => {
