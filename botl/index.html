@@ -169,40 +169,54 @@
     let score = 0;
 
     // Start the slides
+document.querySelector(".play-button").addEventListener("click", () => {
+    console.log("Play button clicked.");
+    startSlides();
+});
+
 function startSlides() {
     const playButton = document.querySelector(".play-button");
     const imageContainer = document.querySelector(".image-container");
     const slides = document.getElementById("slides");
 
+    console.log("Starting slides...");
+
     // Hide the play button and main screen image
     playButton.style.display = "none";
     imageContainer.style.display = "none";
+    console.log("Play button and image container hidden.");
 
-    // Initialize slides: Ensure all slides are hidden
-    document.querySelectorAll(".slide").forEach((slide) => {
+    // Ensure all slides are hidden initially
+    document.querySelectorAll(".slide").forEach((slide, index) => {
         slide.classList.add("hidden");
+        console.log(`Slide ${index + 1} is hidden.`);
     });
 
     // Show the slides container
     slides.classList.remove("hidden");
+    console.log("Slides container is now visible.");
 
     // Start showing slides
     let currentSlide = 1;
     const totalSlides = 3;
     const slideInterval = setInterval(() => {
         if (currentSlide <= totalSlides) {
+            console.log(`Showing slide ${currentSlide}...`);
+
             // Hide the previous slide
             if (currentSlide > 1) {
                 document.getElementById(`slide${currentSlide - 1}`).classList.add("hidden");
+                console.log(`Slide ${currentSlide - 1} is now hidden.`);
             }
 
             // Show the current slide
             document.getElementById(`slide${currentSlide}`).classList.remove("hidden");
+            console.log(`Slide ${currentSlide} is now visible.`);
 
             // Move to the next slide
             currentSlide++;
         } else {
-            // End slides and start the game
+            console.log("Slides finished. Starting the game...");
             clearInterval(slideInterval);
             startGame();
         }
@@ -212,6 +226,7 @@ function startSlides() {
 
     // Start the game
     function startGame() {
+        console.log("Game started!");
         const slides = document.getElementById("slides");
         const game = document.getElementById("game");
         const emeraldsContainer = document.getElementById("emeralds-container");
