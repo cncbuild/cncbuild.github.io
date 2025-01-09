@@ -117,11 +117,33 @@ align-self: flex-start;
 
 .slide {
     opacity: 0;
+    padding: 10px;
+    box-sizing: border-box;
     transition: opacity 1s ease-in-out;
 }
 
 .slide:not(.hidden) {
     opacity: 1;
+}
+
+.slide-text {
+    font-size: 2rem; /* Default font size */
+    color: white;    /* Ensure the text is visible against any background */
+    max-width: 90%;  /* Limit width to prevent overflow */
+    word-wrap: break-word; /* Break long words if necessary */
+}
+
+/* Make text smaller on smaller screens */
+@media (max-width: 768px) {
+    .slide-text {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .slide-text {
+        font-size: 1.2rem;
+    }
 }
 
 #game {
@@ -156,9 +178,9 @@ align-self: flex-start;
     </div>
 
     <div id="slides" class="hidden">
-    <div class="slide" id="slide1">Two island villages, Pig Cat Village and Lava Island, had an Emerald split in half for each!</div>
-    <div class="slide hidden" id="slide2">One day, a lava monster split Pig Cat's part in half!!!</div>
-    <div class="slide hidden" id="slide3">This caused much trouble all around Pig Cat Village Island...</div>
+    <div class="slide" id="slide1"><p class="slide-text">Two island villages, Pig Cat Village and Lava Island, had an Emerald split in half for each!</p></div>
+    <div class="slide hidden" id="slide2"><p class="slide-text">One day, a lava monster split Pig Cat's part in half!!!</p></div>
+    <div class="slide hidden" id="slide3"><p class="slide-text">This caused much trouble all around Pig Cat Village Island...</p></div>
 </div>
 
 <div id="game" class="hidden">
