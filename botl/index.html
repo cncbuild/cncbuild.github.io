@@ -146,7 +146,7 @@
     <img src="botl-main-screen.png" alt="Breath of the Landscape Drawing" class="feature-image">
 
     <div id="slides" class="hidden">
-    <div class="slide" id="slide1">Two villages on Lava Island and Pig Cat Village had an Emerald split in half for each!</div>
+    <div class="slide" id="slide1">Two island villages, Pig Cat Village and Lava Island, had an Emerald split in half for each!</div>
     <div class="slide hidden" id="slide2">One day, a lava monster split Pig Cat's part in half!!!</div>
     <div class="slide hidden" id="slide3">This caused much trouble all around Pig Cat Village Island...</div>
 </div>
@@ -169,34 +169,46 @@
     let score = 0;
 
     // Start the slides
-    function startSlides() {
-        const playButton = document.querySelector(".play-button");
-        const imageContainer = document.querySelector(".image-container");
-        const slides = document.getElementById("slides");
+function startSlides() {
+    const playButton = document.querySelector(".play-button");
+    const imageContainer = document.querySelector(".image-container");
+    const slides = document.getElementById("slides");
 
-        // Hide the play button and the main screen image
-        playButton.style.display = "none";
-        imageContainer.style.display = "none";
+    // Hide the play button and main screen image
+    playButton.style.display = "none";
+    imageContainer.style.display = "none";
 
-        // Show slides
-        slides.classList.remove("hidden");
+    // Initialize slides: Ensure all slides are hidden
+    document.querySelectorAll(".slide").forEach((slide) => {
+        slide.classList.add("hidden");
+    });
 
-        // Cycle through slides
-        let currentSlide = 1;
-        const totalSlides = 3;
-        const slideInterval = setInterval(() => {
-            if (currentSlide <= totalSlides) {
-                document.getElementById(`slide${currentSlide}`).classList.add("hidden");
-                currentSlide++;
-                if (currentSlide <= totalSlides) {
-                    document.getElementById(`slide${currentSlide}`).classList.remove("hidden");
-                }
-            } else {
-                clearInterval(slideInterval);
-                startGame();
+    // Show the slides container
+    slides.classList.remove("hidden");
+
+    // Start showing slides
+    let currentSlide = 1;
+    const totalSlides = 3;
+    const slideInterval = setInterval(() => {
+        if (currentSlide <= totalSlides) {
+            // Hide the previous slide
+            if (currentSlide > 1) {
+                document.getElementById(`slide${currentSlide - 1}`).classList.add("hidden");
             }
-        }, 3000); // 3 seconds per slide
-    }
+
+            // Show the current slide
+            document.getElementById(`slide${currentSlide}`).classList.remove("hidden");
+
+            // Move to the next slide
+            currentSlide++;
+        } else {
+            // End slides and start the game
+            clearInterval(slideInterval);
+            startGame();
+        }
+    }, 3000); // 3 seconds per slide
+}
+
 
     // Start the game
     function startGame() {
