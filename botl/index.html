@@ -90,6 +90,51 @@
         }
         .hidden {
     display: none;
+        }
+        #slides {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2em;
+    text-align: center;
+    padding: 20px;
+    z-index: 1000;
+}
+
+.slide {
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+}
+
+.slide:not(.hidden) {
+    opacity: 1;
+}
+
+#game {
+    text-align: center;
+    margin: 20px;
+}
+
+#emeralds-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.emerald {
+    width: 50px;
+    height: 50px;
+    background-color: green;
+    border-radius: 50%;
+    cursor: pointer;
 }
 
     </style>
@@ -99,6 +144,18 @@
     <h1>Breath of the Landscape</h1>
     <h2>A math website (that's like a game) for 7 to 8 year olds!!!</h2>
     <img src="botl-main-screen.png" alt="Breath of the Landscape Drawing" class="feature-image">
+
+    <div id="slides" class="hidden">
+    <div class="slide" id="slide1">Two villages on Lava Island and Pig Cat Village had an Emerald split in half for each!</div>
+    <div class="slide hidden" id="slide2">One day, a lava monster split Pig Cat's part in half!!!</div>
+    <div class="slide hidden" id="slide3">This caused much trouble all around Pig Cat Village Island...</div>
+</div>
+
+<div id="game" class="hidden">
+    <h2>Collect the Emeralds!</h2>
+    <p>Click the emeralds to collect them!</p>
+    <div id="emeralds-container"></div>
+    <p id="score">Score: 0</p>
 </div>
 
     <div class="play-section">
@@ -107,5 +164,72 @@
         <div class="arrow">⬆</div>
     </div>
 
+
+    <script>
+    let score = 0;
+
+    // Start the slides
+    function startSlides() {
+        const playButton = document.querySelector(".play-button");
+        const imageContainer = document.querySelector(".image-container");
+        const slides = document.getElementById("slides");
+
+        // Hide the play button and the main screen image
+        playButton.style.display = "none";
+        imageContainer.style.display = "none";
+
+        // Show slides
+        slides.classList.remove("hidden");
+
+        // Cycle through slides
+        let currentSlide = 1;
+        const totalSlides = 3;
+        const slideInterval = setInterval(() => {
+            if (currentSlide <= totalSlides) {
+                document.getElementById(`slide${currentSlide}`).classList.add("hidden");
+                currentSlide++;
+                if (currentSlide <= totalSlides) {
+                    document.getElementById(`slide${currentSlide}`).classList.remove("hidden");
+                }
+            } else {
+                clearInterval(slideInterval);
+                startGame();
+            }
+        }, 3000); // 3 seconds per slide
+    }
+
+    // Start the game
+    function startGame() {
+        const slides = document.getElementById("slides");
+        const game = document.getElementById("game");
+        const emeraldsContainer = document.getElementById("emeralds-container");
+
+        // Hide slides and show game
+        slides.classList.add("hidden");
+        game.classList.remove("hidden");
+
+        // Create emeralds
+        for (let i = 0; i < 5; i++) {
+            const emerald = document.createElement("div");
+            emerald.className = "emerald";
+            emerald.addEventListener("click", () => {
+                score++;
+                updateScore();
+                emerald.remove(); // Remove emerald when clicked
+            });
+            emeraldsContainer.appendChild(emerald);
+        }
+    }
+
+    // Update the score
+    function updateScore() {
+        const scoreElement = document.getElementById("score");
+        scoreElement.innerText = `Score: ${score}`;
+    }
+
+    // Attach slides to the Play button
+    document.querySelector(".play-button").addEventListener("click", startSlides);
+</script>
+    
 </body>
 </html>
