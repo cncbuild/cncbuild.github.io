@@ -47,6 +47,9 @@
             font-size: 1.5em;
             margin: 0 0 20px;
         }
+        .image-container {
+            width: 100%;
+        }
         .feature-image {
             width: 80%;
             max-width: 600px;
@@ -189,7 +192,8 @@ function startSlides() {
 
     if (!playButton || !imageContainer || !slides) {
         console.error("One or more elements (playButton, imageContainer, slides) are missing from the DOM.");
-        return;
+        return; // Corrected: No code after return
+    }
 
     console.log("Starting slides...");
 
