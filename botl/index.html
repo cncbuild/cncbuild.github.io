@@ -431,9 +431,27 @@ function restartGame() {
 
 // Initialize the game
 function startGame() {
-    emeraldPieces = 0;
-    updateProgress();
-    displayQuestion();
+    console.log("Game started!");
+    const slides = document.getElementById("slides");
+    const game = document.getElementById("game");
+    const emeraldsContainer = document.getElementById("emeralds-container");
+
+    // Hide slides and show game
+    slides.classList.add("hidden");
+    game.classList.remove("hidden"); // Ensure the game becomes visible
+    console.log("Slides hidden. Game container is now visible.");
+
+    // Create emeralds
+    for (let i = 0; i < 5; i++) {
+        const emerald = document.createElement("div");
+        emerald.className = "emerald";
+        emerald.addEventListener("click", () => {
+            score++;
+            updateScore();
+            emerald.remove(); // Remove emerald when clicked
+        });
+        emeraldsContainer.appendChild(emerald);
+    }
 }
 
     // Attach slides to the Play button
