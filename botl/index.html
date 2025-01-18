@@ -233,15 +233,9 @@ align-self: flex-start;
 </div>
 
 <div id="game" class="hidden">
-    <h2 id="question">Solve the problem to collect an emerald piece!</h2>
-    <div id="choices">
-        <!-- Buttons for multiple-choice answers -->
-        <button class="choice-button" data-answer="0">Choice 1</button>
-        <button class="choice-button" data-answer="1">Choice 2</button>
-        <button class="choice-button" data-answer="2">Choice 3</button>
-        <button class="choice-button" data-answer="3">Choice 4</button>
-    </div>
-    <p id="progress">Emerald pieces collected: 0/10</p>
+   <div id="score">Score: 0</div>
+    <div id="question"></div>
+    <div id="choices"></div>
 </div>
 
     <audio id="background-music" src="cryptic-scenery.mp3" loop></audio>
@@ -434,24 +428,104 @@ function startGame() {
     console.log("Game started!");
     const slides = document.getElementById("slides");
     const game = document.getElementById("game");
-    const emeraldsContainer = document.getElementById("emeralds-container");
+    const questionElement = document.getElementById("question");
+    const choicesContainer = document.getElementById("choices");
+    const scoreElement = document.getElementById("score");
 
     // Hide slides and show game
     slides.classList.add("hidden");
-    game.classList.remove("hidden"); // Ensure the game becomes visible
+    game.classList.remove("hidden");
     console.log("Slides hidden. Game container is now visible.");
 
-    // Create emeralds
-    for (let i = 0; i < 5; i++) {
-        const emerald = document.createElement("div");
-        emerald.className = "emerald";
-        emerald.addEventListener("click", () => {
-            score++;
-            updateScore();
-            emerald.remove(); // Remove emerald when clicked
+    // Game variables
+    let currentProblem = 0;
+    const totalProblems = 10;
+    const problems = generateProblems(totalProblems);
+
+    // Display the first problem
+    showProblem(problems[currentProblem]);
+
+    // Event listener for choices
+    choicesContainer.addEventListener("click", (event) => {
+        if (event.target.classList.contains("choice")) {
+            const selectedAnswer = parseInt(event.target.dataset.answer, 10);
+            console.log(`Selected answer: ${selectedAnswer}`);
+
+            if (selectedAnswer === problems[currentProblem].correctAnswer) {
+                console.log("Correct!");
+                score++;
+                updateScore();
+            } else {
+                console.log("Incorrect!");
+            }
+
+            // Move to the next problem or end the game
+            currentProblem++;
+            if (currentProblem < totalProblems) {
+                showProblem(problems[currentProblem]);
+            } else {
+                endGame();
+            }
+        }
+    });
+}
+
+function generateProblems(count) {
+    const problems = [];
+    for (let i = 0; i < count; i++) {
+        const num1 = Math.floor(Math.random() * 20) + 1;
+        const num2 = Math.floor(Math.random() * 20) + 1;
+        const correctAnswer = num1 + num2;
+
+        // Generate incorrect answers
+        const choices = new Set();
+        choices.add(correctAnswer);
+        while (choices.size < 4) {
+            const fakeAnswer = Math.floor(Math.random() * 40) + 1;
+            choices.add(fakeAnswer);
+        }
+
+        problems.push({
+            question: `What is ${num1} + ${num2}?`,
+            correctAnswer,
+            choices: Array.from(choices).sort(() => Math.random() - 0.5), // Randomize choices
         });
-        emeraldsContainer.appendChild(emerald);
     }
+    return problems;
+}
+
+function showProblem(problem) {
+    const questionElement = document.getElementById("question");
+    const choicesContainer = document.getElementById("choices");
+
+    // Display question
+    questionElement.innerText = problem.question;
+
+    // Display choices
+    choicesContainer.innerHTML = ""; // Clear previous choices
+    problem.choices.forEach((choice) => {
+        const button = document.createElement("button");
+        button.className = "choice";
+        button.dataset.answer = choice;
+        button.innerText = choice;
+        choicesContainer.appendChild(button);
+    });
+
+    console.log("Problem displayed:", problem);
+}
+
+function updateScore() {
+    const scoreElement = document.getElementById("score");
+    scoreElement.innerText = `Score: ${score}`;
+}
+
+function endGame() {
+    console.log("Game over!");
+    const game = document.getElementById("game");
+    const message = document.createElement("div");
+    message.className = "end-message";
+    message.innerText = `Congratulations! You've collected all the emerald pieces and saved Pig Cat Village Island!`;
+    game.appendChild(message);
 }
 
     // Attach slides to the Play button
