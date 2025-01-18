@@ -311,7 +311,7 @@ muteButton.addEventListener("click", () => {
     console.log(`Audio ${isMuted ? "muted" : "unmuted"}`);
 });
 
-    // Ensure all slides are hidden initially
+// Ensure all slides are hidden initially
     document.querySelectorAll(".slide").forEach((slide, index) => {
         slide.classList.add("hidden");
         console.log(`Slide ${index + 1} is hidden.`);
@@ -343,11 +343,11 @@ muteButton.addEventListener("click", () => {
         } else {
             console.log("Slides finished. Starting the game...");
             clearInterval(slideInterval);
-            startGame();
+            slides.classList.add("hidden"); // Hide slides after the final one
+            startGame(); // Start the game
         }
     }, 3000); // 3 seconds per slide
 }
-
 
 let currentQuestion = 0;
 let emeraldPieces = 0;
