@@ -146,24 +146,31 @@ align-self: flex-start;
     }
 }
 
-#game {
+#game, #win-screen {
     text-align: center;
-    margin: 20px;
+    margin-top: 50px;
 }
 
-#emeralds-container {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin: 20px 0;
-}
-
-.emerald {
-    width: 50px;
-    height: 50px;
-    background-color: green;
-    border-radius: 50%;
+.choice-button {
+    display: block;
+    margin: 10px auto;
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
     cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.choice-button:hover {
+    background-color: #45a049;
+}
+
+#progress {
+    font-size: 1.2rem;
+    margin-top: 20px;
 }
 
 .credits {
@@ -226,11 +233,21 @@ align-self: flex-start;
 </div>
 
 <div id="game" class="hidden">
-    <h2>Collect the Emeralds!</h2>
-    <p>Click the emeralds to collect them!</p>
-    <div id="emeralds-container"></div>
-    <p id="score">Score: 0</p>
-    <audio id="background-music" src="cryptic-scenery.mp3" loop></audio>
+    <h2 id="question">Solve the problem to collect an emerald piece!</h2>
+    <div id="choices">
+        <!-- Buttons for multiple-choice answers -->
+        <button class="choice-button" data-answer="0">Choice 1</button>
+        <button class="choice-button" data-answer="1">Choice 2</button>
+        <button class="choice-button" data-answer="2">Choice 3</button>
+        <button class="choice-button" data-answer="3">Choice 4</button>
+    </div>
+    <p id="progress">Emerald pieces collected: 0/10</p>
+</div>
+
+<div id="win-screen" class="hidden">
+    <h2>Congratulations!</h2>
+    <p>You’ve saved Pig Cat Village Island and rebuilt the emerald!</p>
+    <button onclick="restartGame()">Play Again</button>
 </div>
 
     <button id="mute-button" class="mute-button" title="Mute/Unmute">🔊</button>
@@ -244,8 +261,7 @@ align-self: flex-start;
     <p class="credits">Song: Umspannwerk by cryptic scenery, source: Free Music Archive with license CC BY-NC-SA</p>
 
     <script>
-    let score = 0;
-
+        
     // Start the slides
 document.querySelector(".play-button").addEventListener("click", () => {
     console.log("Play button clicked.");
@@ -331,35 +347,92 @@ muteButton.addEventListener("click", () => {
 }
 
 
-    // Start the game
-    function startGame() {
-        console.log("Game started!");
-        const slides = document.getElementById("slides");
-        const game = document.getElementById("game");
-        const emeraldsContainer = document.getElementById("emeralds-container");
+let currentQuestion = 0;
+let emeraldPieces = 0;
+const totalQuestions = 10;
 
-        // Hide slides and show game
-        slides.classList.add("hidden");
-        game.classList.remove("hidden");
+// Generate random addition problems
+function generateQuestion() {
+    const num1 = Math.floor(Math.random() * 10) + 1; // Random number between 1-10
+    const num2 = Math.floor(Math.random() * 10) + 1; // Random number between 1-10
+    const correctAnswer = num1 + num2;
 
-        // Create emeralds
-        for (let i = 0; i < 5; i++) {
-            const emerald = document.createElement("div");
-            emerald.className = "emerald";
-            emerald.addEventListener("click", () => {
-                score++;
-                updateScore();
-                emerald.remove(); // Remove emerald when clicked
-            });
-            emeraldsContainer.appendChild(emerald);
+    // Generate incorrect answers
+    const choices = [correctAnswer];
+    while (choices.length < 4) {
+        const wrongAnswer = Math.floor(Math.random() * 20) + 1; // Random number between 1-20
+        if (!choices.includes(wrongAnswer)) {
+            choices.push(wrongAnswer);
         }
     }
 
-    // Update the score
-    function updateScore() {
-        const scoreElement = document.getElementById("score");
-        scoreElement.innerText = `Score: ${score}`;
+    // Shuffle choices
+    choices.sort(() => Math.random() - 0.5);
+
+    return {
+        question: `${num1} + ${num2} = ?`,
+        choices: choices,
+        correctAnswer: correctAnswer,
+    };
+}
+
+// Display a question
+function displayQuestion() {
+    const { question, choices, correctAnswer } = generateQuestion();
+    const questionElement = document.getElementById("question");
+    const choiceButtons = document.querySelectorAll(".choice-button");
+
+    questionElement.innerText = question;
+    choiceButtons.forEach((button, index) => {
+        button.innerText = choices[index];
+        button.dataset.answer = choices[index];
+        button.onclick = () => handleAnswer(choices[index], correctAnswer);
+    });
+}
+
+// Handle answer click
+function handleAnswer(selectedAnswer, correctAnswer) {
+    if (selectedAnswer === correctAnswer) {
+        emeraldPieces++;
+        updateProgress();
+        if (emeraldPieces === totalQuestions) {
+            showWinScreen();
+        } else {
+            displayQuestion();
+        }
+    } else {
+        alert("Incorrect! Try again!");
     }
+}
+
+// Update progress
+function updateProgress() {
+    const progressElement = document.getElementById("progress");
+    progressElement.innerText = `Emerald pieces collected: ${emeraldPieces}/10`;
+}
+
+// Show win screen
+function showWinScreen() {
+    document.getElementById("game").classList.add("hidden");
+    document.getElementById("win-screen").classList.remove("hidden");
+}
+
+// Restart the game
+function restartGame() {
+    currentQuestion = 0;
+    emeraldPieces = 0;
+    document.getElementById("win-screen").classList.add("hidden");
+    document.getElementById("game").classList.remove("hidden");
+    updateProgress();
+    displayQuestion();
+}
+
+// Initialize the game
+function startGame() {
+    emeraldPieces = 0;
+    updateProgress();
+    displayQuestion();
+}
 
     // Attach slides to the Play button
     document.querySelector(".play-button").addEventListener("click", startSlides);
