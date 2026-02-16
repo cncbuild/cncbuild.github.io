@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Times-4 Challenge</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --success: #48bb78;
+            --error: #f56565;
+            --dark: #2d3748;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+            margin: 0;
+            background-color: #f7fafc;
+        }
+
+        #game-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 300px;
+        }
+
+        h2 { color: var(--dark); margin-top: 0; }
+
+        .question {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 1rem 0;
+            color: var(--primary);
+        }
+
+        input {
+            width: 80px;
+            font-size: 2rem;
+            padding: 5px;
+            text-align: center;
+            border: 3px solid #cbd5e0;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        input:focus { border-color: var(--primary); }
+
+        button {
+            display: block;
+            width: 100%;
+            margin-top: 1rem;
+            padding: 10px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover { background: #357abd; }
+
+        #feedback {
+            margin-top: 1rem;
+            font-weight: bold;
+            height: 1.2em;
+        }
+
+        .correct { color: var(--success); }
+        .wrong { color: var(--error); }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="game-screen">
+        <h2>Times-4 Challenge!</h2>
+        <div id="progress">Question 1 of 12</div>
+        <div class="question" id="question-text">4 × ?</div>
+        <input type="number" id="answer-input" placeholder="?" autocomplete="off">
+        <button onclick="checkAnswer()">Submit Answer</button>
+        <div id="feedback"></div>
+    </div>
+
+    <div id="result-screen" class="hidden">
+        <h2>Great Job!</h2>
+        <p id="final-score"></p>
+        <button onclick="restartGame()">Play Again</button>
+    </div>
+</div>
+
+<script>
+    let questions = [];
+    let currentIndex = 0;
+    let score = 0;
+
+    function initGame() {
+        // Create numbers 1-12 and shuffle them
+        questions = Array.from({length: 12}, (_, i) => i + 1)
+                         .sort(() => Math.random() - 0.5);
+        currentIndex = 0;
+        score = 0;
+        showQuestion();
+    }
+
+    function showQuestion() {
+        document.getElementById('game-screen').classList.remove('hidden');
+        document.getElementById('result-screen').classList.add('hidden');
+        document.getElementById('progress').innerText = `Question ${currentIndex + 1} of 12`;
+        document.getElementById('question-text').innerText = `4 × ${questions[currentIndex]}`;
+        document.getElementById('answer-input').value = '';
+        document.getElementById('feedback').innerText = '';
+        document.getElementById('answer-input').focus();
+    }
+
+    function checkAnswer() {
+        const input = document.getElementById('answer-input');
+        const feedback = document.getElementById('feedback');
+        const userAnswer = parseInt(input.value);
+        const correctAnswer = 4 * questions[currentIndex];
+
+        if (isNaN(userAnswer)) return;
+
+        if (userAnswer === correctAnswer) {
+            score++;
+            feedback.innerText = "Correct! ✨";
+            feedback.className = "correct";
+        } else {
+            feedback.innerText = `Oops! 4 × ${questions[currentIndex]} = ${correctAnswer}`;
+            feedback.className = "wrong";
+        }
+
+        // Wait a moment so kid can see feedback, then move on
+        setTimeout(() => {
+            currentIndex++;
+            if (currentIndex < 12) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }, 1500);
+    }
+
+    function showResults() {
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        document.getElementById('final-score').innerText = `You got ${score} out of 12 correct!`;
+    }
+
+    function restartGame() {
+        initGame();
+    }
+
+    // Allow "Enter" key to submit
+    document.getElementById('answer-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') checkAnswer();
+    });
+
+    // Start on load
+    initGame();
+</script>
+
+</body>
+</html>
