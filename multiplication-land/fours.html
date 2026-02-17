@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Times-4 Monster Hunter</title>
+    <style>
+        :root {
+            --primary: #4a90e2; --success: #48bb78; --error: #f56565; --dark: #2d3748;
+            --bg: #cbd5e0; --gold: #ecc94b;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; background-color: var(--bg);
+        }
+
+        #game-container {
+            background: white; padding: 1.5rem; border: 4px solid #000;
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.2); text-align: center; width: 400px;
+            position: relative;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
+        h2 { margin-top: 0; font-size: 1.5rem; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        h3 { font-size: 1rem; margin: 10px 0 5px; text-transform: uppercase; color: var(--dark); }
+
+        /* --- ANIMATIONS --- */
+        @keyframes jump-dance {
+            0%, 100% { transform: translateY(0) rotate(0); }
+            25% { transform: translateY(-15px) rotate(-5deg); }
+            50% { transform: translateY(0) rotate(0); }
+            75% { transform: translateY(-15px) rotate(5deg); }
+        }
+
+        @keyframes face-plant {
+            0% { transform: rotate(0); }
+            20% { transform: rotate(-10deg); } 
+            100% { transform: rotate(90deg) translateY(10px); opacity: 0.6; }
+        }
+
+        .dancing { animation: jump-dance 0.4s ease infinite; }
+        .falling { transform-origin: bottom center; animation: face-plant 0.5s ease forwards; }
+        
+        /* --- UI ELEMENTS --- */
+        .scene-split { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; height: 120px; }
+        .avatar-box, .monster-box { width: 100px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+        .pixel-art { shape-rendering: crispEdges; }
+
+        /* Monster Selector Grid */
+        .monster-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 5px; }
+        .monster-option { 
+            border: 2px solid #ccc; cursor: pointer; padding: 4px 2px; transition: 0.2s; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 80px;
+        }
+        .monster-option:hover { background: #eee; }
+        
+        /* Selected State */
+        .monster-option.selected { border-color: #000; background: #ffe4e6; transform: scale(1.05); z-index: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        
+        /* Caught State */
+        .monster-option.caught { background-color: #c6f6d5; border-color: #2f855a; opacity: 0.9; }
+        .monster-option.caught .monster-name { color: #2f855a; }
+
+        .monster-name { font-size: 0.55rem; font-weight: bold; margin-top: 2px; line-height: 1.1; }
+        .caught-label { font-size: 0.6rem; color: #276749; font-weight: 900; margin-top: 2px; text-transform: uppercase; }
+
+        /* Controls */
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; text-align: left; }
+        select { width: 100%; padding: 5px; border: 2px solid #000; font-family: inherit; background: #eee; cursor: pointer; }
+        label { font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 2px; }
+
+        /* Gameplay UI */
+        .question { font-size: 2.5rem; font-weight: bold; margin: 10px 0; color: var(--primary); }
+        
+        input { 
+            width: 100px; font-size: 2rem; padding: 5px; text-align: center; 
+            border: 3px solid #000; outline: none; font-family: inherit;
+        }
+        
+        button { 
+            display: block; width: 100%; margin-top: 15px; padding: 12px; 
+            background: var(--dark); color: white; border: 3px solid #000; 
+            font-size: 1.2rem; cursor: pointer; font-family: inherit;
+            transition: transform 0.1s;
+        }
+        button:active { transform: translateY(2px); }
+
+        /* Progress Bar */
+        .capture-container { width: 100%; margin-top: 5px; }
+        .capture-bar-bg { width: 100%; height: 15px; background: #ddd; border: 2px solid #000; position: relative; }
+        .capture-bar-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.3s; }
+        .capture-label { font-size: 0.7rem; font-weight: bold; margin-top: 2px; }
+
+        .game-counter { margin-top: 15px; font-size: 0.8rem; font-weight: bold; color: #718096; border-top: 1px solid #e2e8f0; padding-top: 5px;}
+
+        .hidden { display: none; }
+        #feedback { margin-top: 15px; font-weight: bold; height: 24px; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    
+    <div id="setup-screen">
+        <h2>Hero Setup</h2>
+        
+        <div class="avatar-box" id="preview-area" style="margin: 0 auto;"></div>
+        
+        <div class="controls">
+            <div>
+                <label>HAIR</label>
+                <select id="hair-select" onchange="updatePreview()">
+                    <option value="#4a2e2a">Brown Buzz</option>
+                    <option value="#f6e05e">Blonde Mohawk</option>
+                    <option value="#e53e3e">Red Spiky</option>
+                    <option value="#ed64a6">Pink Bob</option>
+                </select>
+            </div>
+            <div>
+                <label>SHIRT</label>
+                <select id="shirt-select" onchange="updatePreview()">
+                    <option value="#3b82f6">Blue Hero</option>
+                    <option value="#e53e3e">Red Cape</option>
+                    <option value="#48bb78">Green Suit</option>
+                    <option value="#805ad5">Purple Robe</option>
+                </select>
+            </div>
+            <div>
+                <label>FACE</label>
+                <select id="face-select" onchange="updatePreview()">
+                    <option value="smile">Happy</option>
+                    <option value="cool">Cool</option>
+                    <option value="stoic">Serious</option>
+                </select>
+            </div>
+            <div>
+                <label>SKIN</label>
+                <select id="skin-select" onchange="updatePreview()">
+                    <option value="#ffdbac">Light</option>
+                    <option value="#e0ac69">Medium</option>
+                    <option value="#8d5524">Dark</option>
+                </select>
+            </div>
+        </div>
+
+        <hr style="border: 1px solid #000; margin: 15px 0;">
+
+        <h3>Select Bounty</h3>
+        <div class="monster-grid" id="monster-selector">
+            </div>
+
+        <button onclick="startGame()">START MISSION</button>
+        <div class="game-counter" id="setup-counter">Caught: 0 / 5</div>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        
+        <div class="scene-split">
+            <div class="avatar-box" id="game-avatar-container"></div>
+            
+            <div class="monster-box">
+                <div id="game-monster-container"></div>
+                <div class="capture-container">
+                    <div class="capture-bar-bg">
+                        <div id="capture-fill" class="capture-bar-fill"></div>
+                    </div>
+                    <div class="capture-label">CATCH METER</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="progress">Level 1 / 12</div>
+        <div class="question" id="q-text">4 × ?</div>
+        
+        <input type="number" id="ans-input" placeholder="?" autocomplete="off">
+        <button onclick="check()">ATTACK!</button>
+        <div id="feedback"></div>
+        <div class="game-counter" id="gameplay-counter">Caught: 0 / 5</div>
+    </div>
+
+    <div id="result-screen" class="hidden">
+        <h2 id="result-title">MISSION REPORT</h2>
+        <div id="result-graphic" style="margin: 20px 0;"></div>
+        <p id="final-score" style="font-size: 1.5rem; font-weight:bold;"></p>
+        <p id="capture-status" style="margin-bottom: 20px;"></p>
+        <button onclick="returnToSetup()">RETURN TO BASE</button>
+    </div>
+</div>
+
+<script>
+    // --- GAME STATE ---
+    let questions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let selectedMonster = 'leafel'; // default
+    let caughtMonsters = new Set(); // Stores caught monster keys
+
+    const MONSTERS = {
+        'leafel': { name: 'Leafel Legs', color: '#48bb78' },
+        'sonn':   { name: 'The Sonn',    color: '#ecc94b' },
+        'woorm':  { name: 'Woorm',       color: '#ed64a6' },
+        'arfish': { name: 'Arfish',      color: '#4299e1' },
+        'canon':  { name: 'Canonine',    color: '#a0aec0' }
+    };
+
+    // --- SVG GENERATORS ---
+
+    function getAvatarSVG(mood = 'normal') {
+        const hairColor = document.getElementById('hair-select').value;
+        const shirtColor = document.getElementById('shirt-select').value;
+        const skinColor = document.getElementById('skin-select').value;
+        const faceStyle = document.getElementById('face-select').value;
+
+        let svgContent = `
+            <rect x="25" y="80" width="50" height="20" fill="${shirtColor}" />
+            <rect x="30" y="30" width="40" height="50" fill="${skinColor}" />
+            <rect x="25" y="20" width="50" height="20" fill="${hairColor}" />
+            <rect x="25" y="20" width="10" height="50" fill="${hairColor}" />
+            <rect x="65" y="20" width="10" height="50" fill="${hairColor}" />
+        `;
+
+        let eyes = '', mouth = '';
+        if (mood === 'dead') {
+            eyes = `<text x="35" y="60" font-family="sans-serif" font-size="20" fill="black">X</text>
+                    <text x="55" y="60" font-family="sans-serif" font-size="20" fill="black">X</text>`;
+            mouth = `<rect x="40" y="70" width="20" height="5" fill="black" />`;
+        } else {
+            if(faceStyle === 'cool') eyes = `<rect x="30" y="45" width="40" height="10" fill="black" />`;
+            else eyes = `<rect x="35" y="45" width="8" height="8" fill="black" /><rect x="57" y="45" width="8" height="8" fill="black" />`;
+            
+            if(faceStyle === 'stoic') mouth = `<rect x="40" y="65" width="20" height="5" fill="black" />`;
+            else mouth = `<rect x="35" y="65" width="30" height="5" fill="black" /><rect x="35" y="65" width="5" height="2" fill="black" /><rect x="60" y="65" width="5" height="2" fill="black" />`;
+        }
+
+        return `<svg viewBox="0 0 100 100" width="80" height="80" class="pixel-art">${svgContent} ${eyes} ${mouth}</svg>`;
+    }
+
+    function getMonsterSVG(type) {
+        let content = '';
+        
+        if (type === 'leafel') {
+            content = `
+                <rect x="35" y="70" width="10" height="20" fill="#5a3e36" />
+                <rect x="55" y="70" width="10" height="20" fill="#5a3e36" />
+                <path d="M50 10 Q80 10 90 50 Q80 90 50 90 Q20 90 10 50 Q20 10 50 10" fill="#48bb78" />
+                <rect x="50" y="10" width="2" height="80" fill="#2f855a" opacity="0.5" />
+                <rect x="35" y="40" width="10" height="10" fill="black" />
+                <rect x="60" y="40" width="10" height="10" fill="black" />
+            `;
+        } else if (type === 'sonn') {
+            content = `
+                <rect x="30" y="20" width="40" height="70" fill="#ecc94b" />
+                <rect x="30" y="55" width="40" height="10" fill="black" />
+                <rect x="42" y="57" width="16" height="6" fill="#ecc94b" />
+                <rect x="45" y="35" width="10" height="10" fill="#d69e2e" />
+                <rect x="20" y="20" width="5" height="5" fill="#FFFF00"><animate attributeName="opacity" values="0;1;0" dur="1s" repeatCount="indefinite"/></rect>
+            `;
+        } else if (type === 'woorm') {
+            content = `
+                <rect x="20" y="50" width="60" height="40" rx="10" fill="#ed64a6" />
+                <rect x="20" y="60" width="60" height="5" fill="#b83280" opacity="0.3" />
+                <rect x="20" y="75" width="60" height="5" fill="#b83280" opacity="0.3" />
+                <rect x="10" y="65" width="15" height="5" fill="#ed64a6" />
+                <rect x="75" y="65" width="15" height="5" fill="#ed64a6" />
+                <rect x="30" y="45" width="15" height="5" fill="black" transform="rotate(10, 30, 45)" />
+                <rect x="55" y="48" width="15" height="5" fill="black" transform="rotate(-10, 55, 48)" />
+                <rect x="35" y="55" width="5" height="5" fill="black" />
+                <rect x="60" y="55" width="5" height="5" fill="black" />
+            `;
+        } else if (type === 'arfish') {
+            content = `
+                <path d="M20 50 L80 20 L80 80 Z" fill="#4299e1" />
+                <path d="M80 50 L95 30 L95 70 Z" fill="#4299e1" />
+                <circle cx="40" cy="45" r="5" fill="white" /> <circle cx="40" cy="45" r="2" fill="black" />
+                <path d="M30 40 L45 42" stroke="black" stroke-width="2" />
+                <path d="M30 60 L35 65 L40 60 L45 65 L50 60" fill="none" stroke="white" stroke-width="3" />
+            `;
+        } else if (type === 'canon') {
+            content = `
+                <rect x="20" y="50" width="50" height="30" fill="#a0aec0" />
+                <rect x="60" y="30" width="30" height="30" fill="#a0aec0" />
+                <rect x="25" y="80" width="10" height="15" fill="#a0aec0" />
+                <rect x="55" y="80" width="10" height="15" fill="#a0aec0" />
+                <path d="M25 50 L35 20 L45 50 Z" fill="#e53e3e" />
+                <rect x="32" y="15" width="6" height="6" fill="#e53e3e" opacity="0.8"><animate attributeName="y" values="15;5;15" dur="2s" repeatCount="indefinite"/></rect>
+                <rect x="65" y="35" width="8" height="8" fill="white" /> <rect x="67" y="37" width="2" height="2" fill="black" />
+                <rect x="78" y="35" width="8" height="8" fill="white" /> <rect x="80" y="37" width="2" height="2" fill="black" />
+            `;
+        }
+
+        return `<svg viewBox="0 0 100 100" width="80" height="80" class="pixel-art">${content}</svg>`;
+    }
+
+    // --- SETUP LOGIC ---
+
+    function initSetup() {
+        const grid = document.getElementById('monster-selector');
+        grid.innerHTML = '';
+        Object.keys(MONSTERS).forEach(key => {
+            const isCaught = caughtMonsters.has(key);
+            const div = document.createElement('div');
+            
+            // If caught, use caught styling, otherwise check if selected
+            let classes = 'monster-option';
+            if (isCaught) classes += ' caught';
+            if (key === selectedMonster) classes += ' selected';
+            
+            div.className = classes;
+            div.onclick = () => selectMonster(key);
+            
+            let label = `<div class="monster-name">${MONSTERS[key].name}</div>`;
+            if (isCaught) {
+                label += `<div class="caught-label">CAUGHT!</div>`;
+            }
+
+            div.innerHTML = `${getMonsterSVG(key)} ${label}`;
+            grid.appendChild(div);
+        });
+        
+        updateCounters();
+        updatePreview();
+    }
+
+    function selectMonster(key) {
+        selectedMonster = key;
+        initSetup(); // Re-render
+    }
+
+    function updatePreview() {
+        document.getElementById('preview-area').innerHTML = getAvatarSVG('normal');
+    }
+
+    function updateCounters() {
+        const text = `Monsters Caught: ${caughtMonsters.size} / ${Object.keys(MONSTERS).length}`;
+        document.getElementById('setup-counter').innerText = text;
+        document.getElementById('gameplay-counter').innerText = text;
+    }
+
+    // --- GAME LOGIC ---
+
+    function startGame() {
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        
+        // Randomize
+        questions = Array.from({length: 12}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+        currentIndex = 0;
+        score = 0;
+        
+        renderGameAvatar('normal');
+        document.getElementById('game-monster-container').innerHTML = getMonsterSVG(selectedMonster);
+        document.getElementById('capture-fill').style.width = '0%';
+        updateCounters();
+        
+        nextQuestion();
+    }
+
+    function renderGameAvatar(mood, animateClass = '') {
+        const container = document.getElementById('game-avatar-container');
+        container.innerHTML = getAvatarSVG(mood);
+        if(animateClass) container.querySelector('svg').classList.add(animateClass);
+    }
+
+    function nextQuestion() {
+        document.getElementById('progress').innerText = `Level ${currentIndex + 1} / 12`;
+        document.getElementById('q-text').innerText = `4 × ${questions[currentIndex]}`;
+        document.getElementById('ans-input').value = '';
+        document.getElementById('ans-input').focus();
+        document.getElementById('feedback').innerText = '';
+        renderGameAvatar('normal');
+    }
+
+    function check() {
+        const input = document.getElementById('ans-input');
+        const feedback = document.getElementById('feedback');
+        const val = parseInt(input.value);
+        const correct = 4 * questions[currentIndex];
+
+        if (isNaN(val)) return;
+
+        if (val === correct) {
+            score++;
+            feedback.innerText = "HIT!";
+            feedback.style.color = "var(--success)";
+            renderGameAvatar('win', 'dancing');
+            
+            let percent = (score / 11) * 100;
+            if (percent > 100) percent = 100;
+            document.getElementById('capture-fill').style.width = `${percent}%`;
+
+        } else {
+            feedback.innerText = `MISS! It's ${correct}`;
+            feedback.style.color = "var(--error)";
+            renderGameAvatar('dead', 'falling');
+        }
+
+        setTimeout(() => {
+            currentIndex++;
+            if (currentIndex < 12) {
+                nextQuestion();
+            } else {
+                showResults();
+            }
+        }, 1500);
+    }
+
+    function showResults() {
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        
+        const caught = score >= 11;
+        const monsterName = MONSTERS[selectedMonster].name;
+
+        document.getElementById('final-score').innerText = `Score: ${score} / 12`;
+
+        if (caught) {
+            // Add to caught set
+            caughtMonsters.add(selectedMonster);
+            
+            document.getElementById('result-title').innerText = "MISSION SUCCESS!";
+            document.getElementById('result-graphic').innerHTML = getMonsterSVG(selectedMonster);
+            document.getElementById('capture-status').innerText = `You caught ${monsterName}!`;
+            document.getElementById('capture-status').style.color = "green";
+            document.getElementById('capture-status').style.fontWeight = "bold";
+        } else {
+            document.getElementById('result-title').innerText = "MISSION FAILED";
+            document.getElementById('result-graphic').innerHTML = `<div style="opacity:0.3; filter:grayscale(1);">${getMonsterSVG(selectedMonster)}</div>`;
+            document.getElementById('capture-status').innerText = `${monsterName} escaped! You need 11 hits to catch it.`;
+            document.getElementById('capture-status').style.color = "red";
+        }
+    }
+
+    function returnToSetup() {
+        // Reset screens but keep caughtMonsters
+        document.getElementById('result-screen').classList.add('hidden');
+        document.getElementById('setup-screen').classList.remove('hidden');
+        initSetup(); // Re-render grid to show new caught status
+    }
+
+    // Init
+    initSetup();
+    
+    document.getElementById('ans-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') check();
+    });
+
+</script>
+
+</body>
+</html>
