@@ -3,180 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Times-4 Hero Challenge</title>
+    <title>Multiplication Land | Colby Kuhns Creations</title>
     <style>
-        :root {
-            --primary: #4a90e2; --success: #48bb78; --error: #f56565; --dark: #2d3748;
-            --skin: #ffdbac; --shirt: #3b82f6; --hair: #4a2e2a;
-        }
-
         body {
-            font-family: 'Courier New', Courier, monospace;
-            display: flex; justify-content: center; align-items: center;
-            min-height: 100vh; margin: 0; background-color: #cbd5e0;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f4f4f9;
+            color: #333;
         }
-
-        #game-container {
-            background: white; padding: 2rem; border: 4px solid #000;
-            box-shadow: 8px 8px 0px rgba(0,0,0,0.2); text-align: center; width: 350px;
+        h1 {
+            margin: 0.5em 15px;
+            text-align: center;
         }
-
-        /* Avatar Styling */
-        .avatar-preview { width: 100px; height: 100px; margin: 10px auto; background: #edf2f7; border: 2px solid #000; display: flex; justify-content: center; align-items: center; }
-        .pixel-art { shape-rendering: crispEdges; }
-        
-        /* Customization Controls */
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
-        .control-group { text-align: left; font-size: 0.8rem; }
-        select { width: 100%; padding: 5px; border: 2px solid #000; font-family: inherit; }
-
-        .question { font-size: 2.5rem; font-weight: bold; margin: 1rem 0; color: var(--primary); }
-        input { width: 80px; font-size: 2rem; padding: 5px; text-align: center; border: 3px solid #000; outline: none; }
-        button { 
-            display: block; width: 100%; margin-top: 1rem; padding: 10px; 
-            background: var(--dark); color: white; border: 3px solid #000; 
-            font-size: 1.1rem; cursor: pointer; font-family: inherit;
+        nav {
+            margin-top: 1em;
         }
-        button:hover { background: var(--primary); }
-
-        .hidden { display: none; }
-        #feedback { margin-top: 10px; font-weight: bold; height: 20px; }
+        p {
+            margin: 0.5em 15px;
+        }
+        a {
+            text-decoration: none;
+            color: #007BFF;
+            font-size: 1.2em;
+            margin: 0 10px;
+            transition: color 0.3s;
+        }
+        a:hover {
+            color: #0056b3;
+        }
     </style>
 </head>
 <body>
-
-<div id="game-container">
-    <div id="setup-screen">
-        <h2 style="margin-top:0">CREATE HERO</h2>
-        <div class="avatar-preview" id="preview-area">
-            </div>
-        
-        <div class="controls">
-            <div class="control-group">
-                <label>HAIR</label>
-                <select id="hair-select" onchange="updateAvatar()">
-                    <option value="#4a2e2a">Brown Buzz</option>
-                    <option value="#f6e05e">Blonde Mohawk</option>
-                    <option value="#2d3748">Black Spiky</option>
-                    <option value="#ed64a6">Pink Bob</option>
-                </select>
-            </div>
-            <div class="control-group">
-                <label>SHIRT</label>
-                <select id="shirt-select" onchange="updateAvatar()">
-                    <option value="#3b82f6">Blue</option>
-                    <option value="#e53e3e">Red</option>
-                    <option value="#48bb78">Green</option>
-                    <option value="#805ad5">Purple</option>
-                </select>
-            </div>
-            <div class="control-group">
-                <label>FACE</label>
-                <select id="face-select" onchange="updateAvatar()">
-                    <option value="smile">Happy</option>
-                    <option value="cool">Cool (Glasses)</option>
-                    <option value="surprised">Surprised</option>
-                </select>
-            </div>
-            <div class="control-group">
-                <label>SKIN</label>
-                <select id="skin-select" onchange="updateAvatar()">
-                    <option value="#ffdbac">Light</option>
-                    <option value="#8d5524">Dark</option>
-                </select>
-            </div>
-        </div>
-        <button onclick="startGame()">START GAME</button>
-    </div>
-
-    <div id="game-screen" class="hidden">
-        <div id="mini-avatar" style="transform: scale(0.6); margin-bottom: -20px;"></div>
-        <div id="progress">1 / 12</div>
-        <div class="question" id="q-text">4 × ?</div>
-        <input type="number" id="ans-input" autocomplete="off">
-        <button onclick="check()">SUBMIT</button>
-        <div id="feedback"></div>
-    </div>
-
-    <div id="result-screen" class="hidden">
-        <h2>QUEST COMPLETE!</h2>
-        <p id="final-score"></p>
-        <button onclick="location.reload()">PLAY AGAIN</button>
-    </div>
-</div>
-
-<script>
-    let questions = [], currentIndex = 0, score = 0;
-
-    function getAvatarSVG(isWin = false) {
-        const hair = document.getElementById('hair-select').value;
-        const shirt = document.getElementById('shirt-select').value;
-        const skin = document.getElementById('skin-select').value;
-        const face = document.getElementById('face-select').value;
-
-        // Simple 8-bit block logic
-        let faceElements = `<rect x="30" y="45" width="5" height="5" fill="black"/><rect x="65" y="45" width="5" height="5" fill="black"/>`; // Eyes
-        if(face === 'smile') faceElements += `<rect x="35" y="65" width="30" height="5" fill="black"/>`;
-        if(face === 'cool') faceElements = `<rect x="25" y="45" width="50" height="8" fill="black"/>`;
-        if(face === 'surprised') faceElements += `<rect x="45" y="65" width="10" height="10" fill="black"/>`;
-        if(isWin) faceElements += `<rect x="20" y="30" width="5" height="5" fill="yellow"/><rect x="75" y="30" width="5" height="5" fill="yellow"/>`; // Sparkles
-
-        return `
-        <svg viewBox="0 0 100 100" class="pixel-art" width="100" height="100">
-            <rect x="20" y="80" width="60" height="20" fill="${shirt}" /> <rect x="25" y="20" width="50" height="60" fill="${skin}" /> <rect x="20" y="10" width="60" height="20" fill="${hair}" /> ${faceElements}
-        </svg>`;
-    }
-
-    function updateAvatar() {
-        document.getElementById('preview-area').innerHTML = getAvatarSVG();
-    }
-
-    function startGame() {
-        document.getElementById('setup-screen').classList.add('hidden');
-        document.getElementById('game-screen').classList.remove('hidden');
-        document.getElementById('mini-avatar').innerHTML = getAvatarSVG();
-        questions = Array.from({length: 12}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
-        showQ();
-    }
-
-    function showQ() {
-        document.getElementById('progress').innerText = `Question ${currentIndex + 1} of 12`;
-        document.getElementById('q-text').innerText = `4 × ${questions[currentIndex]}`;
-        document.getElementById('ans-input').value = '';
-        document.getElementById('ans-input').focus();
-    }
-
-    function check() {
-        const val = parseInt(document.getElementById('ans-input').value);
-        const correct = 4 * questions[currentIndex];
-        const feed = document.getElementById('feedback');
-
-        if (val === correct) {
-            score++;
-            feed.innerText = "AWESOME!"; feed.style.color = "green";
-            document.getElementById('mini-avatar').innerHTML = getAvatarSVG(true);
-        } else {
-            feed.innerText = `WRONG! It was ${correct}`; feed.style.color = "red";
-        }
-
-        setTimeout(() => {
-            document.getElementById('mini-avatar').innerHTML = getAvatarSVG(false);
-            currentIndex++;
-            if (currentIndex < 12) { showQ(); document.getElementById('feedback').innerText = ""; }
-            else showResults();
-        }, 1500);
-    }
-
-    function showResults() {
-        document.getElementById('game-screen').classList.add('hidden');
-        document.getElementById('result-screen').classList.remove('hidden');
-        document.getElementById('final-score').innerText = `SCORE: ${score} / 12`;
-    }
-
-    // Initialize
-    updateAvatar();
-    document.getElementById('ans-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') check(); });
-</script>
-
+    <h1>Multiplication Land!</h1>
+    <p>Play fun multiplication games made by Colby & co.</p>
+    <nav>
+        <a href="fours.html">Multiply By 4's</a>
+    </nav>
 </body>
 </html>
