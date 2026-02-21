@@ -161,6 +161,16 @@ function generateWrongAnswers(correct) {
     }
     return [...wrong];
   }
+  if (gameState.mode === 6) {
+    let pool = [6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72].filter(m => m !== correct);
+    if (correct !== 6) pool = pool.filter(m => m !== 6);
+    while (wrong.size < 3 && pool.length > 0) {
+      const idx = Math.floor(Math.random() * pool.length);
+      wrong.add(pool[idx]);
+      pool.splice(idx, 1);
+    }
+    return [...wrong];
+  }
   while (wrong.size < 3) {
     const offset = (Math.floor(Math.random() * 7) - 3) * (Math.random() > 0.5 ? 1 : -1);
     const val = correct + offset;
