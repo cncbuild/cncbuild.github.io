@@ -343,11 +343,18 @@
         this.add.sprite(prizeIconStartX + i * 44, 162, iconKey).setScale(0.5);
       }, this);
 
+      var self = this;
       for (var r = 0; r < ROWS; r++) {
         for (var c = 0; c < COLS; c++) {
-          var tx = boardOriginX + c * tileW + tileW / 2;
-          var ty = boardOriginY + r * tileH + tileH / 2;
-          var tile = this.add.rectangle(tx, ty, tileW - 4, tileH - 4, 0xf5efe6).setStrokeStyle(2, 0xc4b59a);
+          (function (row, col) {
+            var tx = boardOriginX + col * tileW + tileW / 2;
+            var ty = boardOriginY + row * tileH + tileH / 2;
+            var tile = self.add.rectangle(tx, ty, tileW - 4, tileH - 4, 0xf5efe6).setStrokeStyle(2, 0xc4b59a);
+            tile.setInteractive({ useHandCursor: true });
+            tile.on('pointerdown', function () {
+              self.tryMoveTo(row, col);
+            });
+          })(r, c);
         }
       }
 
@@ -374,24 +381,19 @@
 
       this.cursors = this.input.keyboard.createCursorKeys();
 
-      this.add.text(w / 2, h - 24, 'Arrow keys to move • Land on a prize to solve a problem', { fontFamily: 'Arial', fontSize: 14, color: '#8b6b7d' }).setOrigin(0.5);
+      this.add.text(w / 2, h - 24, 'Tap a spot or use arrow keys to move • Land on a prize to solve a problem', { fontFamily: 'Arial', fontSize: 14, color: '#8b6b7d' }).setOrigin(0.5);
     },
-    update: function () {
+    tryMoveTo: function (newRow, newCol) {
       if (this.moving) return;
-      var character = this.registry.get('character');
-      var prizePositions = this.registry.get('prizePositions');
       var origin = this.registry.get('boardOrigin');
       if (!origin) return;
       var row = this.playerSprite.getData('row');
       var col = this.playerSprite.getData('col');
       var tileW = TILE, tileH = TILE;
-      var newRow = row, newCol = col;
-      if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) newCol = Math.max(0, col - 1);
-      if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) newCol = Math.min(COLS - 1, col + 1);
-      if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) newRow = Math.max(0, row - 1);
-      if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) newRow = Math.min(ROWS - 1, row + 1);
       if (newRow === row && newCol === col) return;
+      if (newRow < 0 || newRow >= ROWS || newCol < 0 || newCol >= COLS) return;
       this.moving = true;
+      var prizePositions = this.registry.get('prizePositions');
       var targetX = origin.x + newCol * tileW + tileW / 2;
       var targetY = origin.y + newRow * tileH + tileH / 2;
       this.tweens.add({
@@ -414,6 +416,18 @@
         },
         callbackScope: this
       });
+    },
+    update: function () {
+      if (this.moving) return;
+      var prizePositions = this.registry.get('prizePositions');
+      var row = this.playerSprite.getData('row');
+      var col = this.playerSprite.getData('col');
+      var newRow = row, newCol = col;
+      if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) newCol = Math.max(0, col - 1);
+      if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) newCol = Math.min(COLS - 1, col + 1);
+      if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) newRow = Math.max(0, row - 1);
+      if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) newRow = Math.min(ROWS - 1, row + 1);
+      if (newRow !== row || newCol !== col) this.tryMoveTo(newRow, newCol);
     }
   });
 
