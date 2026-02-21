@@ -1,1 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pawkey</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      font-family: 'Outfit', sans-serif;
+      color: #e8e8e8;
+      padding: 20px;
+    }
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.5rem;
+      letter-spacing: 0.15em;
+      margin-bottom: 10px;
+      color: #ff6b35;
+    }
+    .subtitle {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-bottom: 15px;
+    }
+    #gameContainer {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    #gameCanvas {
+      display: block;
+      background: #2d5a4a;
+    }
+    .ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 15px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
+      pointer-events: none;
+    }
+    .score-display {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      display: flex;
+      gap: 30px;
+    }
+    .score-display .player-score { color: #ff6b35; }
+    .score-display .opponent-score { color: #4a90d9; }
+    .period-time {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+    .instructions {
+      margin-top: 15px;
+      font-size: 0.85rem;
+      opacity: 0.9;
+    }
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    .modal h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      color: #ff6b35;
+    }
+    .modal p {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .modal button {
+      padding: 12px 40px;
+      font-size: 1.1rem;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      background: #ff6b35;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+    }
+    .modal button:hover {
+      background: #ff8555;
+      transform: scale(1.02);
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <h1>🐱 PAWKEY 🐱</h1>
+  <p class="subtitle">Overhead ice rink • Arrow keys to move • Bump the puck to shoot</p>
+  <div id="gameContainer">
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    <div class="ui-overlay">
+      <div class="score-display">
+        <span id="playerScore" class="player-score">0</span>
+        <span>-</span>
+        <span id="opponentScore" class="opponent-score">0</span>
+      </div>
+      <div class="period-time">
+        <span id="periodLabel">Period 1</span> • <span id="timerDisplay">2:00</span>
+      </div>
+    </div>
+  </div>
+  <p class="instructions">Arrow keys: Move your cat • Bump into the puck to move it • 3 periods × 2 min • Overtime if tied</p>
 
+  <div id="startModal" class="modal">
+    <h2>Pawkey</h2>
+    <p>You (orange) vs the other cat (blue)<br>Bump the puck with the mouse on it into the goal!</p>
+    <button id="startBtn">Start Game</button>
+  </div>
+
+  <div id="intermissionModal" class="modal hidden">
+    <h2 id="intermissionTitle">Intermission</h2>
+    <p id="intermissionText">Get ready for the next period!</p>
+    <button id="intermissionBtn">Continue</button>
+  </div>
+
+  <div id="gameOverModal" class="modal hidden">
+    <h2 id="gameOverTitle">Game Over</h2>
+    <p id="gameOverText"></p>
+    <button id="playAgainBtn">Play Again</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const RINK_WIDTH = 800;
+    const RINK_HEIGHT = 500;
+    const GOAL_WIDTH = 120;
+    const GOAL_DEPTH = 20;
+    const PUCK_RADIUS = 12;
+    const CAT_RADIUS = 22;
+    const ICE_FRICTION = 0.9992;
+    const MAX_PUCK_SPEED = 180;
+    const MAX_CAT_SPEED = 192;
+    const PERIOD_DURATION = 120;
+    const OVERTIME_DURATION = 120;
+
+    const GOAL_TOP = RINK_HEIGHT / 2 - GOAL_WIDTH / 2;
+    const GOAL_BOTTOM = RINK_HEIGHT / 2 + GOAL_WIDTH / 2;
+
+    let keys = {};
+    let gameState = 'start';
+    let puck, playerCat, opponentCat;
+    let goalCelebrationStartTime = 0;
+    let goalCelebrationColor = '#ff6b35';
+    let goalCelebrationPlayerScored = false;
+    let fireworks = [];
+    let playerScore = 0, opponentScore = 0;
+    let currentPeriod = 1;
+    let periodTimeLeft = PERIOD_DURATION;
+    let isOvertime = false;
+    let lastTime = 0;
+    let animationId;
+
+    class Vector {
+      constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+      }
+      add(v) { this.x += v.x; this.y += v.y; return this; }
+      sub(v) { this.x -= v.x; this.y -= v.y; return this; }
+      mul(s) { this.x *= s; this.y *= s; return this; }
+      length() { return Math.sqrt(this.x * this.x + this.y * this.y); }
+      normalize() {
+        const len = this.length();
+        if (len > 0) { this.x /= len; this.y /= len; }
+        return this;
+      }
+      set(x, y) { this.x = x; this.y = y; return this; }
+      copy() { return new Vector(this.x, this.y); }
+    }
+
+    class Puck {
+      constructor() {
+        this.pos = new Vector(RINK_WIDTH / 2, RINK_HEIGHT / 2);
+        this.vel = new Vector(0, 0);
+        this.radius = PUCK_RADIUS;
+      }
+      update(dt) {
+        this.vel.mul(Math.pow(ICE_FRICTION, dt / 16));
+        this.pos.add(new Vector(this.vel.x * dt / 1000, this.vel.y * dt / 1000));
+        const speed = this.vel.length();
+        if (speed > MAX_PUCK_SPEED) this.vel.mul(MAX_PUCK_SPEED / speed);
+        this.checkBounds();
+      }
+      checkBounds() {
+        const wallBounce = 0.97;
+        if (this.pos.y - this.radius < 0) { this.pos.y = this.radius; this.vel.y = Math.abs(this.vel.y) * wallBounce; }
+        if (this.pos.y + this.radius > RINK_HEIGHT) { this.pos.y = RINK_HEIGHT - this.radius; this.vel.y = -Math.abs(this.vel.y) * wallBounce; }
+        const inGoalY = this.pos.y > GOAL_TOP && this.pos.y < GOAL_BOTTOM;
+        if (this.pos.x - this.radius < 0) {
+          if (!inGoalY) { this.pos.x = this.radius; this.vel.x = Math.abs(this.vel.x) * wallBounce; }
+        } else if (this.pos.x + this.radius > RINK_WIDTH) {
+          if (!inGoalY) { this.pos.x = RINK_WIDTH - this.radius; this.vel.x = -Math.abs(this.vel.x) * wallBounce; }
+        }
+      }
+      reset(toLeft = null) {
+        this.pos.set(RINK_WIDTH / 2, RINK_HEIGHT / 2);
+        this.vel.set(0, 0);
+      }
+      draw() {
+        ctx.save();
+        ctx.translate(this.pos.x, this.pos.y);
+        ctx.fillStyle = '#1a1a1a';
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.font = '18px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🐭', 0, 0);
+        ctx.restore();
+      }
+    }
+
+    class Cat {
+      constructor(x, color, isPlayer) {
+        this.pos = new Vector(x, RINK_HEIGHT / 2);
+        this.vel = new Vector(0, 0);
+        this.radius = CAT_RADIUS;
+        this.color = color;
+        this.isPlayer = isPlayer;
+      }
+      update(dt, puck) {
+        if (this.isPlayer) {
+          const accel = 12800;
+          if (keys['ArrowUp']) this.vel.y -= accel * dt / 1000;
+          if (keys['ArrowDown']) this.vel.y += accel * dt / 1000;
+          if (keys['ArrowLeft']) this.vel.x -= accel * dt / 1000;
+          if (keys['ArrowRight']) this.vel.x += accel * dt / 1000;
+        } else {
+          this.aiMove(puck);
+        }
+        this.vel.mul(Math.pow(0.97, dt / 16));
+        const speed = this.vel.length();
+        if (speed > MAX_CAT_SPEED) this.vel.mul(MAX_CAT_SPEED / speed);
+        this.pos.add(new Vector(this.vel.x * dt / 1000, this.vel.y * dt / 1000));
+        this.checkBounds();
+      }
+      aiMove(puck) {
+        const dx = puck.pos.x - this.pos.x;
+        const dy = puck.pos.y - this.pos.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 5) return;
+        const push = 120;
+        this.vel.x += (dx / dist) * push * 0.016;
+        this.vel.y += (dy / dist) * push * 0.016;
+      }
+      checkBounds() {
+        const margin = 8;
+        if (this.pos.x - this.radius < margin) { this.pos.x = margin + this.radius; this.vel.x = 0; }
+        if (this.pos.x + this.radius > RINK_WIDTH - margin) { this.pos.x = RINK_WIDTH - margin - this.radius; this.vel.x = 0; }
+        if (this.pos.y - this.radius < margin) { this.pos.y = margin + this.radius; this.vel.y = 0; }
+        if (this.pos.y + this.radius > RINK_HEIGHT - margin) { this.pos.y = RINK_HEIGHT - margin - this.radius; this.vel.y = 0; }
+      }
+      reset(x) {
+        this.pos.set(x, RINK_HEIGHT / 2);
+        this.vel.set(0, 0);
+      }
+      draw() {
+        ctx.save();
+        ctx.translate(this.pos.x, this.pos.y);
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.font = `${this.radius * 1.4}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🐱', 0, 0);
+        ctx.restore();
+      }
+    }
+
+    function circleCircleCollision(aPos, aVel, aRad, bPos, bVel, bRad, aMass, bMass) {
+      const dx = bPos.x - aPos.x;
+      const dy = bPos.y - aPos.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const minDist = aRad + bRad;
+      if (dist >= minDist) return false;
+      const nx = dx / dist;
+      const ny = dy / dist;
+      const relVx = aVel.x - bVel.x;
+      const relVy = aVel.y - bVel.y;
+      const relVn = relVx * nx + relVy * ny;
+      if (relVn <= 0) return false;
+      const e = 0.95;
+      const j = (1 + e) * relVn / (1 / aMass + 1 / bMass);
+      return { nx, ny, j };
+    }
+
+    function resolveCollision(cat, puck) {
+      const col = circleCircleCollision(
+        cat.pos, cat.vel, cat.radius,
+        puck.pos, puck.vel, puck.radius,
+        1.2, 0.4
+      );
+      if (!col) return;
+      puck.vel.x += col.j * col.nx / 0.4;
+      puck.vel.y += col.j * col.ny / 0.4;
+      cat.vel.x -= col.j * col.nx / 1.2;
+      cat.vel.y -= col.j * col.ny / 1.2;
+      const catSpeed = Math.sqrt(cat.vel.x * cat.vel.x + cat.vel.y * cat.vel.y);
+      if (catSpeed > 2) {
+        const transfer = 0.4;
+        puck.vel.x += cat.vel.x * transfer;
+        puck.vel.y += cat.vel.y * transfer;
+      }
+      const overlap = (cat.radius + puck.radius) - Math.sqrt(
+        Math.pow(puck.pos.x - cat.pos.x, 2) + Math.pow(puck.pos.y - cat.pos.y, 2)
+      );
+      if (overlap > 0) {
+        const sx = (cat.pos.x - puck.pos.x) / (cat.radius + puck.radius);
+        const sy = (cat.pos.y - puck.pos.y) / (cat.radius + puck.radius);
+        puck.pos.x -= sx * overlap;
+        puck.pos.y -= sy * overlap;
+      }
+    }
+
+    function startGoalCelebration(playerScored) {
+      goalCelebrationStartTime = performance.now();
+      goalCelebrationColor = playerScored ? '#ff6b35' : '#4a90d9';
+      goalCelebrationPlayerScored = playerScored;
+      gameState = 'goalCelebration';
+      fireworks = [];
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => spawnFirework(), i * 380);
+      }
+    }
+
+    function spawnFirework() {
+      const x = 150 + Math.random() * 500;
+      const y = 150 + Math.random() * 200;
+      const hue = goalCelebrationColor === '#ff6b35' ? 20 : 210;
+      const particleCount = 45 + Math.floor(Math.random() * 20);
+      for (let i = 0; i < particleCount; i++) {
+        const angle = (Math.PI * 2 * i / particleCount) + Math.random() * 0.5;
+        const speed = 3 + Math.random() * 5;
+        fireworks.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 2,
+          life: 1,
+          hue: hue + (Math.random() - 0.5) * 30,
+          size: 2 + Math.random() * 2
+        });
+      }
+    }
+
+    function updateFireworks(dt) {
+      for (let i = fireworks.length - 1; i >= 0; i--) {
+        const p = fireworks[i];
+        p.x += p.vx * dt / 20;
+        p.y += p.vy * dt / 20;
+        p.vy += 0.15 * dt / 20;
+        p.life -= dt / 1200;
+        if (p.life <= 0) fireworks.splice(i, 1);
+      }
+    }
+
+    function drawGoalCelebration(dt) {
+      const elapsed = performance.now() - goalCelebrationStartTime;
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(0, 0, RINK_WIDTH, RINK_HEIGHT);
+      updateFireworks(dt);
+      fireworks.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = `hsl(${p.hue}, 85%, 55%)`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+      ctx.save();
+      const meowAlpha = Math.min(1, elapsed / 300) * Math.max(0, 1 - (elapsed - 2500) / 800);
+      const meowScale = Math.min(1, elapsed / 200) * 0.7 + 0.3;
+      ctx.globalAlpha = meowAlpha;
+      ctx.translate(RINK_WIDTH / 2, RINK_HEIGHT / 2);
+      ctx.scale(meowScale, meowScale);
+      ctx.translate(-RINK_WIDTH / 2, -RINK_HEIGHT / 2);
+      ctx.font = 'bold 96px "Bebas Neue", impact, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = goalCelebrationColor;
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 4;
+      ctx.strokeText('MEOW!', RINK_WIDTH / 2, RINK_HEIGHT / 2);
+      ctx.fillText('MEOW!', RINK_WIDTH / 2, RINK_HEIGHT / 2);
+      ctx.restore();
+    }
+
+    function checkGoals() {
+      if (puck.pos.x - puck.radius < 0 && puck.pos.y > GOAL_TOP && puck.pos.y < GOAL_BOTTOM) {
+        opponentScore++;
+        if (isOvertime) {
+          gameState = 'gameover';
+          document.getElementById('gameOverModal').classList.remove('hidden');
+          document.getElementById('gameOverTitle').textContent = 'You Lose!';
+          document.getElementById('gameOverText').textContent = `OT Final: ${playerScore} - ${opponentScore}`;
+        } else {
+          startGoalCelebration(false);
+        }
+        return true;
+      }
+      if (puck.pos.x + puck.radius > RINK_WIDTH && puck.pos.y > GOAL_TOP && puck.pos.y < GOAL_BOTTOM) {
+        playerScore++;
+        if (isOvertime) {
+          gameState = 'gameover';
+          document.getElementById('gameOverModal').classList.remove('hidden');
+          document.getElementById('gameOverTitle').textContent = 'You Win!';
+          document.getElementById('gameOverText').textContent = `OT Final: ${playerScore} - ${opponentScore}`;
+        } else {
+          startGoalCelebration(true);
+        }
+        return true;
+      }
+      return false;
+    }
+
+    function resetAfterGoal(scoreLeft) {
+      puck.reset();
+      playerCat.reset(80);
+      opponentCat.reset(RINK_WIDTH - 80);
+    }
+
+    function drawRink() {
+      ctx.fillStyle = '#2d5a4a';
+      ctx.fillRect(0, 0, RINK_WIDTH, RINK_HEIGHT);
+      ctx.strokeStyle = '#4a7c6b';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(2, 2, RINK_WIDTH - 4, RINK_HEIGHT - 4);
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(RINK_WIDTH / 2 - 1, 0, 2, RINK_HEIGHT);
+      ctx.beginPath();
+      ctx.arc(RINK_WIDTH / 2, RINK_HEIGHT / 2, 60, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(0, GOAL_TOP, GOAL_DEPTH, GOAL_WIDTH);
+      ctx.fillRect(RINK_WIDTH - GOAL_DEPTH, GOAL_TOP, GOAL_DEPTH, GOAL_WIDTH);
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(0, GOAL_TOP, GOAL_DEPTH, GOAL_WIDTH);
+      ctx.strokeRect(RINK_WIDTH - GOAL_DEPTH, GOAL_TOP, GOAL_DEPTH, GOAL_WIDTH);
+    }
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function updateUI() {
+      document.getElementById('playerScore').textContent = playerScore;
+      document.getElementById('opponentScore').textContent = opponentScore;
+      document.getElementById('timerDisplay').textContent = formatTime(periodTimeLeft);
+      document.getElementById('periodLabel').textContent = isOvertime ? 'OT' : `Period ${currentPeriod}`;
+    }
+
+    function nextPeriodOrEnd() {
+      if (isOvertime) {
+        gameState = 'gameover';
+        document.getElementById('gameOverModal').classList.remove('hidden');
+        document.getElementById('gameOverTitle').textContent = 'Tie Game!';
+        document.getElementById('gameOverText').textContent = `Final: ${playerScore} - ${opponentScore}`;
+      } else if (currentPeriod < 3) {
+        gameState = 'intermission';
+        currentPeriod++;
+        periodTimeLeft = PERIOD_DURATION;
+        document.getElementById('intermissionModal').classList.remove('hidden');
+        document.getElementById('intermissionTitle').textContent = 'Intermission';
+        document.getElementById('intermissionText').textContent = `Period ${currentPeriod - 1} complete. Score: ${playerScore} - ${opponentScore}`;
+      } else {
+        if (playerScore === opponentScore) {
+          isOvertime = true;
+          periodTimeLeft = OVERTIME_DURATION;
+          gameState = 'intermission';
+          document.getElementById('intermissionModal').classList.remove('hidden');
+          document.getElementById('intermissionTitle').textContent = 'Overtime!';
+          document.getElementById('intermissionText').textContent = 'Sudden death - first goal wins! 2 minutes. Tie if no goal.';
+        } else {
+          gameState = 'gameover';
+          document.getElementById('gameOverModal').classList.remove('hidden');
+          const won = playerScore > opponentScore;
+          document.getElementById('gameOverTitle').textContent = won ? 'You Win!' : 'You Lose!';
+          document.getElementById('gameOverText').textContent = `Final: ${playerScore} - ${opponentScore}`;
+        }
+      }
+    }
+
+    function gameLoop(timestamp) {
+      const dt = Math.min(timestamp - lastTime, 50);
+      lastTime = timestamp;
+
+      if (gameState === 'playing') {
+        periodTimeLeft -= dt / 1000;
+        if (periodTimeLeft <= 0) {
+          periodTimeLeft = 0;
+          nextPeriodOrEnd();
+        }
+
+        playerCat.update(dt, puck);
+        opponentCat.update(dt, puck);
+        puck.update(dt);
+        resolveCollision(playerCat, puck);
+        resolveCollision(opponentCat, puck);
+        checkGoals();
+      } else if (gameState === 'goalCelebration') {
+        const elapsed = performance.now() - goalCelebrationStartTime;
+        if (elapsed >= 4000) {
+          resetAfterGoal(!goalCelebrationPlayerScored);
+          gameState = 'playing';
+        }
+      }
+
+      drawRink();
+      if (puck && playerCat && opponentCat) {
+        puck.draw();
+        playerCat.draw();
+        opponentCat.draw();
+      }
+      if (gameState === 'goalCelebration') {
+        drawGoalCelebration(dt);
+      }
+      updateUI();
+
+      animationId = requestAnimationFrame(gameLoop);
+    }
+
+    function initGame() {
+      puck = new Puck();
+      playerCat = new Cat(80, '#ff6b35', true);
+      opponentCat = new Cat(RINK_WIDTH - 80, '#4a90d9', false);
+      playerScore = 0;
+      opponentScore = 0;
+      currentPeriod = 1;
+      periodTimeLeft = PERIOD_DURATION;
+      isOvertime = false;
+      gameState = 'playing';
+    }
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      document.getElementById('startModal').classList.add('hidden');
+      initGame();
+    });
+
+    document.getElementById('intermissionBtn').addEventListener('click', () => {
+      document.getElementById('intermissionModal').classList.add('hidden');
+      puck.reset();
+      playerCat.reset(80);
+      opponentCat.reset(RINK_WIDTH - 80);
+      gameState = 'playing';
+    });
+
+    document.getElementById('playAgainBtn').addEventListener('click', () => {
+      document.getElementById('gameOverModal').classList.add('hidden');
+      document.getElementById('startModal').classList.remove('hidden');
+    });
+
+    document.addEventListener('keydown', e => {
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+      keys[e.key] = true;
+    });
+    document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+    lastTime = performance.now();
+    animationId = requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
