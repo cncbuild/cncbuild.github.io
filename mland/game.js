@@ -151,6 +151,12 @@ function generateProblem() {
 
 function generateWrongAnswers(correct) {
   const wrong = new Set();
+  if (gameState.mode === 5) {
+    const multiplesOf5 = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60].filter(m => m !== correct);
+    if (multiplesOf5.length > 0) {
+      wrong.add(multiplesOf5[Math.floor(Math.random() * multiplesOf5.length)]);
+    }
+  }
   while (wrong.size < 3) {
     const offset = (Math.floor(Math.random() * 7) - 3) * (Math.random() > 0.5 ? 1 : -1);
     const val = correct + offset;
