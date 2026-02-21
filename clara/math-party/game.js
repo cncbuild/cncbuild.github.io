@@ -145,9 +145,27 @@
         var url = svgToDataUrl(ICON_SVGS[key]);
         if (url) this.load.image('icon-' + key, url);
       }, this);
+      [['player-boy', '👦'], ['player-girl', '👧']].forEach(function (entry) {
+        var key = entry[0];
+        var emoji = entry[1];
+        var c = document.createElement('canvas');
+        c.width = 64;
+        c.height = 80;
+        var ctx = c.getContext('2d');
+        ctx.fillStyle = '#fef9f0';
+        ctx.fillRect(0, 0, 64, 80);
+        ctx.font = '56px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(emoji, 32, 40);
+        try {
+          this.load.image(key, c.toDataURL('image/png'));
+        } catch (e) {}
+      }, this);
     },
     create: function () {
       this.registry.set('character', null);
+      this.registry.set('playerType', null);
       this.registry.set('prizesWon', []);
       this.registry.set('correctCount', 0);
       this.registry.set('totalAsked', 0);
@@ -167,21 +185,43 @@
       var w = this.cameras.main.width;
       var h = this.cameras.main.height;
       this.add.rectangle(0, 0, w * 2, h * 2, 0xfef9f0).setOrigin(0);
-      this.add.text(w / 2, 48, 'Math Party', { fontFamily: 'Georgia', fontSize: 42, color: '#8b6b7d' }).setOrigin(0.5);
-      this.add.text(w / 2, 92, 'Choose your friend', { fontFamily: 'Arial', fontSize: 18, color: '#8b6b7d' }).setOrigin(0.5);
+      this.add.text(w / 2, 36, 'Math Party', { fontFamily: 'Georgia', fontSize: 36, color: '#8b6b7d' }).setOrigin(0.5);
+      this.add.text(w / 2, 72, 'Play as', { fontFamily: 'Arial', fontSize: 16, color: '#8b6b7d' }).setOrigin(0.5);
+      var playerType = this.registry.get('playerType');
+      var boxW = 80;
+      var boxH = 72;
+      var boyX = w / 2 - 70;
+      var girlX = w / 2 + 70;
+      var boxCenterY = 132;
+      var boyBtn = this.add.rectangle(boyX, boxCenterY, boxW, boxH, 0xf5efe6, 1).setStrokeStyle(3, playerType === 'boy' ? 0xc9a227 : 0xe8b4b8);
+      var girlBtn = this.add.rectangle(girlX, boxCenterY, boxW, boxH, 0xf5efe6, 1).setStrokeStyle(3, playerType === 'girl' ? 0xc9a227 : 0xe8b4b8);
+      var imgScale = 0.38;
+      var imgY = boxCenterY - 14;
+      if (this.textures.exists('player-boy')) this.add.sprite(boyX, imgY, 'player-boy').setScale(imgScale);
+      else this.add.text(boyX, imgY, '👦', { fontSize: 28 }).setOrigin(0.5);
+      if (this.textures.exists('player-girl')) this.add.sprite(girlX, imgY, 'player-girl').setScale(imgScale);
+      else this.add.text(girlX, imgY, '👧', { fontSize: 28 }).setOrigin(0.5);
+      var labelY = boxCenterY + 26;
+      this.add.text(boyX, labelY, 'Boy', { fontFamily: 'Arial', fontSize: 12, color: '#8b6b7d' }).setOrigin(0.5);
+      this.add.text(girlX, labelY, 'Girl', { fontFamily: 'Arial', fontSize: 12, color: '#8b6b7d' }).setOrigin(0.5);
+      var boyHit = this.add.rectangle(boyX, boxCenterY, boxW, boxH, 0x000000, 0).setInteractive({ useHandCursor: true });
+      var girlHit = this.add.rectangle(girlX, boxCenterY, boxW, boxH, 0x000000, 0).setInteractive({ useHandCursor: true });
+      boyHit.on('pointerdown', function () { this.registry.set('playerType', 'boy'); this.scene.restart(); }, this);
+      girlHit.on('pointerdown', function () { this.registry.set('playerType', 'girl'); this.scene.restart(); }, this);
 
+      this.add.text(w / 2, 184, 'Choose your friend', { fontFamily: 'Arial', fontSize: 18, color: '#8b6b7d' }).setOrigin(0.5);
       var selected = this.registry.get('character');
       var startBtn = this.add.text(w / 2, h - 60, 'Start Adventure', { fontFamily: 'Arial', fontSize: 22, color: '#fff' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
       var btnBg = this.add.rectangle(w / 2, h - 60, 200, 48, 0xc9a227).setOrigin(0.5);
       this.children.bringToTop(startBtn);
-      if (!selected) { startBtn.setAlpha(0.5); btnBg.setAlpha(0.5); }
+      if (!selected || !playerType) { startBtn.setAlpha(0.5); btnBg.setAlpha(0.5); }
 
       var cols = 3;
       var rows = 3;
       var cellSpacing = Math.min(100, (w - 40) / cols - 20);
-      var contentTop = 92 + 24;
+      var contentTop = 184 + 24;
       var contentBottom = h - 60 - 48 - 24;
-      var zoneHeight = Math.min(contentBottom - contentTop, 380);
+      var zoneHeight = Math.min(contentBottom - contentTop, 340);
       var zoneCenterY = contentTop + zoneHeight / 2;
       var startY = zoneCenterY - (rows - 1) * (cellSpacing / 2);
       var startX = w / 2 - (cols - 1) * (cellSpacing / 2);
@@ -200,10 +240,10 @@
       }, this);
 
       startBtn.on('pointerdown', function () {
-        if (this.registry.get('character')) this.scene.start('GameBoard');
+        if (this.registry.get('character') && this.registry.get('playerType')) this.scene.start('GameBoard');
       }, this);
       btnBg.setInteractive({ useHandCursor: true }).on('pointerdown', function () {
-        if (this.registry.get('character')) this.scene.start('GameBoard');
+        if (this.registry.get('character') && this.registry.get('playerType')) this.scene.start('GameBoard');
       }, this);
     }
   });
@@ -278,8 +318,16 @@
       var boardOriginX = (w - boardPixelW) / 2;
       var boardOriginY = 192;
 
+      var playerType = this.registry.get('playerType') || 'boy';
+      var playerKey = 'player-' + playerType;
+      var headerCharCenterY = 78;
+      if (this.textures.exists(playerKey)) {
+        this.add.sprite(w / 2 - 108, headerCharCenterY, playerKey).setScale(0.76);
+      } else {
+        this.add.text(w / 2 - 108, headerCharCenterY, playerType === 'boy' ? '👦' : '👧', { fontSize: 56 }).setOrigin(0.5);
+      }
       this.add.text(w / 2, 16, character.name, { fontFamily: 'Arial', fontSize: 16, color: '#8b6b7d' }).setOrigin(0.5, 0);
-      buildCharacterWithPrizes(this, w / 2, 78, character, prizesWon, 0.72);
+      buildCharacterWithPrizes(this, w / 2, headerCharCenterY, character, prizesWon, 0.72);
       this.add.text(w / 2, 142, 'Prizes: ' + prizesWon.length + ' / ' + TARGET_CORRECT, { fontFamily: 'Arial', fontSize: 13, color: '#8b6b7d' }).setOrigin(0.5);
       var numShow = Math.min(prizesWon.length, 6);
       var prizeIconStartX = numShow > 0 ? w / 2 - (numShow - 1) * 22 : w / 2;
@@ -309,7 +357,11 @@
 
       var playerPixelX = boardOriginX + playerCol * tileW + tileW / 2;
       var playerPixelY = boardOriginY + playerRow * tileH + tileH / 2;
-      this.playerSprite = this.add.text(playerPixelX, playerPixelY, character.icon, { fontSize: 38 }).setOrigin(0.5);
+      if (this.textures.exists(playerKey)) {
+        this.playerSprite = this.add.sprite(playerPixelX, playerPixelY, playerKey).setScale(0.52);
+      } else {
+        this.playerSprite = this.add.text(playerPixelX, playerPixelY, playerType === 'boy' ? '👦' : '👧', { fontSize: 38 }).setOrigin(0.5);
+      }
       this.playerSprite.setData('row', playerRow);
       this.playerSprite.setData('col', playerCol);
       this.registry.set('boardOrigin', { x: boardOriginX, y: boardOriginY });
@@ -414,6 +466,8 @@
       this.feedbackText = this.add.text(w / 2, 420, '', { fontFamily: 'Arial', fontSize: 16, color: '#2d2a3a' }).setOrigin(0.5);
     },
     answer: function (val, sum, prize) {
+      var w = this.cameras.main.width;
+      var h = this.cameras.main.height;
       var correct = val === sum;
       if (correct) {
         var prizesWon = this.registry.get('prizesWon');
@@ -424,10 +478,47 @@
         var correctCount = this.registry.get('correctCount') + 1;
         this.registry.set('correctCount', correctCount);
         this.feedbackText.setText('Correct! You won: ' + prize.name + '!').setColor('#2d7a4a');
+        var playerType = this.registry.get('playerType') || 'boy';
+        var playerKey = 'player-' + playerType;
+        var dancer;
+        if (this.textures.exists(playerKey)) {
+          dancer = this.add.sprite(w / 2, h - 140, playerKey).setScale(0.7);
+        } else {
+          dancer = this.add.text(w / 2, h - 140, playerType === 'boy' ? '👦' : '👧', { fontSize: 56 }).setOrigin(0.5);
+        }
+        var startY = dancer.y;
+        this.tweens.add({
+          targets: dancer,
+          y: startY - 25,
+          duration: 180,
+          yoyo: true,
+          repeat: 3,
+          ease: 'Sine.easeInOut'
+        });
+        var fromScale = (dancer.scaleX != null) ? dancer.scaleX : 1;
+        this.tweens.add({
+          targets: dancer,
+          scaleX: fromScale * 1.2,
+          scaleY: fromScale * 1.2,
+          duration: 200,
+          yoyo: true,
+          repeat: 3,
+          ease: 'Sine.easeInOut',
+          delay: 90
+        });
+        this.tweens.add({
+          targets: dancer,
+          angle: -14,
+          duration: 140,
+          yoyo: true,
+          repeat: 5,
+          ease: 'Sine.easeInOut',
+          delay: 50
+        });
       } else {
         this.feedbackText.setText('Not quite. The answer was ' + sum + '.').setColor('#b53d3d');
       }
-      this.time.delayedCall(1400, function () {
+      this.time.delayedCall(correct ? 1600 : 1400, function () {
         if (this.registry.get('correctCount') >= TARGET_CORRECT) {
           this.scene.start('WellDone');
         } else {
@@ -475,6 +566,7 @@
       var playAgain = this.add.text(w / 2, h - 56, 'Play Again', { fontFamily: 'Arial', fontSize: 22, color: '#fff' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
       playAgain.on('pointerdown', function () {
         this.registry.set('character', null);
+        this.registry.set('playerType', null);
         this.registry.set('prizesWon', []);
         this.registry.set('correctCount', 0);
         this.registry.set('totalAsked', 0);
@@ -486,6 +578,7 @@
       this.children.bringToTop(playAgain);
       playAgainBg.on('pointerdown', function () {
         this.registry.set('character', null);
+        this.registry.set('playerType', null);
         this.registry.set('prizesWon', []);
         this.registry.set('correctCount', 0);
         this.registry.set('totalAsked', 0);
