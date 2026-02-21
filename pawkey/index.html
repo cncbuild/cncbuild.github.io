@@ -48,6 +48,12 @@
       opacity: 0.8;
       margin-bottom: 8px;
     }
+    .control-touch { display: none; }
+    .control-desktop { display: inline; }
+    @media (pointer: coarse), (max-width: 1024px) {
+      .control-touch { display: inline; }
+      .control-desktop { display: none; }
+    }
     #gameWrapper {
       flex: 1 1 0;
       min-height: 0;
@@ -324,7 +330,7 @@
   <div class="main-content">
   <header class="page-header">
     <h1>🐱 PAWKEY 🐱</h1>
-    <p class="subtitle">Overhead ice rink • Arrow keys or joystick • Bump the puck to shoot</p>
+    <p class="subtitle">Overhead ice rink • <span class="control-desktop">Arrow keys</span><span class="control-touch">Joystick</span> • Bump the puck to shoot</p>
   </header>
   <div class="game-row">
     <button id="pauseBtn" class="hidden">Pawws</button>
@@ -445,6 +451,7 @@
       }
       checkBounds() {
         const wallBounce = 0.97;
+        const cornerMargin = this.radius * 2.5;
         if (this.pos.y - this.radius < 0) { this.pos.y = this.radius; this.vel.y = Math.abs(this.vel.y) * wallBounce; }
         if (this.pos.y + this.radius > RINK_HEIGHT) { this.pos.y = RINK_HEIGHT - this.radius; this.vel.y = -Math.abs(this.vel.y) * wallBounce; }
         const inGoalY = this.pos.y > GOAL_TOP && this.pos.y < GOAL_BOTTOM;
@@ -452,6 +459,27 @@
           if (!inGoalY) { this.pos.x = this.radius; this.vel.x = Math.abs(this.vel.x) * wallBounce; }
         } else if (this.pos.x + this.radius > RINK_WIDTH) {
           if (!inGoalY) { this.pos.x = RINK_WIDTH - this.radius; this.vel.x = -Math.abs(this.vel.x) * wallBounce; }
+        }
+        const speed = Math.sqrt(this.vel.x * this.vel.x + this.vel.y * this.vel.y);
+        const cornerNudge = 6;
+        const inCorner = (this.pos.x < cornerMargin && this.pos.y < cornerMargin) ||
+          (this.pos.x < cornerMargin && this.pos.y > RINK_HEIGHT - cornerMargin) ||
+          (this.pos.x > RINK_WIDTH - cornerMargin && this.pos.y < cornerMargin) ||
+          (this.pos.x > RINK_WIDTH - cornerMargin && this.pos.y > RINK_HEIGHT - cornerMargin);
+        if (inCorner && speed < 15) {
+          if (this.pos.x < cornerMargin && this.pos.y < cornerMargin) {
+            this.vel.x += cornerNudge;
+            this.vel.y += cornerNudge;
+          } else if (this.pos.x < cornerMargin && this.pos.y > RINK_HEIGHT - cornerMargin) {
+            this.vel.x += cornerNudge;
+            this.vel.y -= cornerNudge;
+          } else if (this.pos.x > RINK_WIDTH - cornerMargin && this.pos.y < cornerMargin) {
+            this.vel.x -= cornerNudge;
+            this.vel.y += cornerNudge;
+          } else if (this.pos.x > RINK_WIDTH - cornerMargin && this.pos.y > RINK_HEIGHT - cornerMargin) {
+            this.vel.x -= cornerNudge;
+            this.vel.y -= cornerNudge;
+          }
         }
       }
       reset(toLeft = null) {
@@ -492,22 +520,40 @@
           if (keys['ArrowLeft']) this.vel.x -= accel * dt / 1000;
           if (keys['ArrowRight']) this.vel.x += accel * dt / 1000;
         } else {
-          this.aiMove(puck);
+          this.aiMove(puck, dt);
         }
         this.vel.mul(Math.pow(0.97, dt / 16));
         const speed = this.vel.length();
-        if (speed > MAX_CAT_SPEED) this.vel.mul(MAX_CAT_SPEED / speed);
+        const maxSpeed = this.isPlayer ? MAX_CAT_SPEED : MAX_CAT_SPEED * 0.75;
+        if (speed > maxSpeed) this.vel.mul(maxSpeed / speed);
         this.pos.add(new Vector(this.vel.x * dt / 1000, this.vel.y * dt / 1000));
         this.checkBounds();
       }
-      aiMove(puck) {
-        const dx = puck.pos.x - this.pos.x;
-        const dy = puck.pos.y - this.pos.y;
+      aiMove(puck, dt) {
+        const cornerMargin = 40;
+        const inCorner = (puck.pos.x < cornerMargin && puck.pos.y < cornerMargin) ||
+          (puck.pos.x < cornerMargin && puck.pos.y > RINK_HEIGHT - cornerMargin) ||
+          (puck.pos.x > RINK_WIDTH - cornerMargin && puck.pos.y < cornerMargin) ||
+          (puck.pos.x > RINK_WIDTH - cornerMargin && puck.pos.y > RINK_HEIGHT - cornerMargin);
+        let targetX = puck.pos.x;
+        let targetY = puck.pos.y;
+        if (inCorner) {
+          const cx = RINK_WIDTH / 2;
+          const cy = RINK_HEIGHT / 2;
+          const ax = cx - puck.pos.x;
+          const ay = cy - puck.pos.y;
+          const len = Math.sqrt(ax * ax + ay * ay) || 1;
+          targetX = puck.pos.x + (ax / len) * 175;
+          targetY = puck.pos.y + (ay / len) * 175;
+        }
+        let dx = targetX - this.pos.x;
+        let dy = targetY - this.pos.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 5) return;
-        const push = 144;
-        this.vel.x += (dx / dist) * push * 0.016;
-        this.vel.y += (dy / dist) * push * 0.016;
+        const push = 9830;
+        const t = dt / 1000;
+        this.vel.x += (dx / dist) * push * t;
+        this.vel.y += (dy / dist) * push * t;
       }
       checkBounds() {
         const margin = 8;
