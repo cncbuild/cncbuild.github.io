@@ -2,13 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Pawkey</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;700&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { touch-action: manipulation; }
     body {
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -17,6 +19,7 @@
       font-family: 'Outfit', sans-serif;
       color: #e8e8e8;
       padding: 20px;
+      overflow-x: hidden;
     }
     h1 {
       font-family: 'Bebas Neue', sans-serif;
@@ -35,10 +38,15 @@
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      max-width: 100%;
+      flex-shrink: 0;
     }
     #gameCanvas {
       display: block;
       background: #2d5a4a;
+      width: 100%;
+      max-width: min(800px, 100vw);
+      height: auto;
     }
     .ui-overlay {
       position: absolute;
@@ -105,12 +113,88 @@
       background: #ff8555;
       transform: scale(1.02);
     }
+    .game-row {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+      min-height: 40px;
+    }
+    #pauseBtn {
+      padding: 8px 24px;
+      font-size: 1rem;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      background: #ff6b35;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+    }
+    #pauseBtn:hover {
+      background: #ff8555;
+    }
+    #pauseBtn.hidden { display: none; }
+
     .hidden { display: none !important; }
+
+    @media (max-width: 600px) {
+      body { padding: 10px 8px; }
+      h1 { font-size: 1.6rem; letter-spacing: 0.08em; }
+      .subtitle { font-size: 0.75rem; margin-bottom: 8px; }
+      .instructions { font-size: 0.7rem; }
+      .ui-overlay { padding: 10px 14px; }
+      .score-display { font-size: 1.4rem; gap: 18px; }
+      .period-time { font-size: 0.95rem; }
+    }
+
+    #joystickContainer {
+      display: none;
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      z-index: 50;
+      padding: 20px;
+      padding-left: max(20px, env(safe-area-inset-left));
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      touch-action: none;
+      user-select: none;
+    }
+    #joystickContainer.visible {
+      display: block;
+    }
+    #joystickBase {
+      width: min(120px, 28vw);
+      height: min(120px, 28vw);
+      border-radius: 50%;
+      background: rgba(255,107,53,0.35);
+      border: 3px solid rgba(255,107,53,0.8);
+      position: relative;
+      touch-action: none;
+    }
+    #joystickStick {
+      width: min(48px, 11vw);
+      height: min(48px, 11vw);
+      border-radius: 50%;
+      background: rgba(255,107,53,0.9);
+      border: 2px solid rgba(255,255,255,0.6);
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      transition: transform 0.05s ease-out;
+    }
+    #joystickStick.active {
+      transition: none;
+    }
   </style>
 </head>
 <body>
   <h1>🐱 PAWKEY 🐱</h1>
-  <p class="subtitle">Overhead ice rink • Arrow keys to move • Bump the puck to shoot</p>
+  <p class="subtitle">Overhead ice rink • Arrow keys or joystick • Bump the puck to shoot</p>
+  <div class="game-row">
+    <button id="pauseBtn" class="hidden">Pawws</button>
+  </div>
   <div id="gameContainer">
     <canvas id="gameCanvas" width="800" height="500"></canvas>
     <div class="ui-overlay">
@@ -120,11 +204,11 @@
         <span id="opponentScore" class="opponent-score">0</span>
       </div>
       <div class="period-time">
-        <span id="periodLabel">Period 1</span> • <span id="timerDisplay">2:00</span>
+        <span id="periodLabel">Period 1</span> • <span id="timerDisplay">1:30</span>
       </div>
     </div>
   </div>
-  <p class="instructions">Arrow keys: Move your cat • Bump into the puck to move it • 3 periods × 2 min • Overtime if tied</p>
+  <p class="instructions">Arrow keys: Move your cat • Bump into the puck to move it • 3 periods × 1:30 • Overtime if tied</p>
 
   <div id="startModal" class="modal">
     <h2>Pawkey</h2>
@@ -144,6 +228,12 @@
     <button id="playAgainBtn">Play Again</button>
   </div>
 
+  <div id="joystickContainer" aria-hidden="true">
+    <div id="joystickBase">
+      <div id="joystickStick"></div>
+    </div>
+  </div>
+
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -156,8 +246,8 @@
     const CAT_RADIUS = 22;
     const ICE_FRICTION = 0.9992;
     const MAX_PUCK_SPEED = 180;
-    const MAX_CAT_SPEED = 192;
-    const PERIOD_DURATION = 120;
+    const MAX_CAT_SPEED = 230;
+    const PERIOD_DURATION = 90;
     const OVERTIME_DURATION = 120;
 
     const GOAL_TOP = RINK_HEIGHT / 2 - GOAL_WIDTH / 2;
@@ -251,7 +341,7 @@
       }
       update(dt, puck) {
         if (this.isPlayer) {
-          const accel = 12800;
+          const accel = 15360;
           if (keys['ArrowUp']) this.vel.y -= accel * dt / 1000;
           if (keys['ArrowDown']) this.vel.y += accel * dt / 1000;
           if (keys['ArrowLeft']) this.vel.x -= accel * dt / 1000;
@@ -270,7 +360,7 @@
         const dy = puck.pos.y - this.pos.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 5) return;
-        const push = 120;
+        const push = 144;
         this.vel.x += (dx / dist) * push * 0.016;
         this.vel.y += (dy / dist) * push * 0.016;
       }
@@ -538,6 +628,8 @@
         resolveCollision(playerCat, puck);
         resolveCollision(opponentCat, puck);
         checkGoals();
+      } else if (gameState === 'paused') {
+        // no updates; draw paused overlay below
       } else if (gameState === 'goalCelebration') {
         const elapsed = performance.now() - goalCelebrationStartTime;
         if (elapsed >= 4000) {
@@ -554,6 +646,15 @@
       }
       if (gameState === 'goalCelebration') {
         drawGoalCelebration(dt);
+      }
+      if (gameState === 'paused') {
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(0, 0, RINK_WIDTH, RINK_HEIGHT);
+        ctx.font = 'bold 48px "Bebas Neue", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#fff';
+        ctx.fillText('Paused 🐾', RINK_WIDTH / 2, RINK_HEIGHT / 2);
       }
       updateUI();
 
@@ -575,6 +676,9 @@
     document.getElementById('startBtn').addEventListener('click', () => {
       document.getElementById('startModal').classList.add('hidden');
       initGame();
+      const pauseBtn = document.getElementById('pauseBtn');
+      pauseBtn.classList.remove('hidden');
+      pauseBtn.textContent = 'Pawws';
     });
 
     document.getElementById('intermissionBtn').addEventListener('click', () => {
@@ -588,6 +692,17 @@
     document.getElementById('playAgainBtn').addEventListener('click', () => {
       document.getElementById('gameOverModal').classList.add('hidden');
       document.getElementById('startModal').classList.remove('hidden');
+      document.getElementById('pauseBtn').classList.add('hidden');
+    });
+
+    document.getElementById('pauseBtn').addEventListener('click', () => {
+      if (gameState === 'playing') {
+        gameState = 'paused';
+        document.getElementById('pauseBtn').textContent = 'Resume';
+      } else if (gameState === 'paused') {
+        gameState = 'playing';
+        document.getElementById('pauseBtn').textContent = 'Pawws';
+      }
     });
 
     document.addEventListener('keydown', e => {
@@ -595,6 +710,81 @@
       keys[e.key] = true;
     });
     document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+    (function initJoystick() {
+      const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      if (!hasTouch) return;
+      const container = document.getElementById('joystickContainer');
+      const base = document.getElementById('joystickBase');
+      const stick = document.getElementById('joystickStick');
+      container.classList.add('visible');
+
+      const deadzone = 0.2;
+      let baseCenter = { x: 0, y: 0 };
+      let activeTouchId = null;
+
+      function setKeysFromStick(dx, dy) {
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 1) {
+          keys['ArrowUp'] = false;
+          keys['ArrowDown'] = false;
+          keys['ArrowLeft'] = false;
+          keys['ArrowRight'] = false;
+          return;
+        }
+        const nx = dx / dist;
+        const ny = dy / dist;
+        const thresh = deadzone;
+        keys['ArrowUp'] = ny < -thresh;
+        keys['ArrowDown'] = ny > thresh;
+        keys['ArrowLeft'] = nx < -thresh;
+        keys['ArrowRight'] = nx > thresh;
+      }
+
+      function onTouchStart(e) {
+        if (activeTouchId !== null) return;
+        const touch = e.changedTouches[0];
+        activeTouchId = touch.identifier;
+        const rect = base.getBoundingClientRect();
+        baseCenter.x = rect.left + rect.width / 2;
+        baseCenter.y = rect.top + rect.height / 2;
+        baseCenter.maxDist = Math.min(rect.width, rect.height) * 0.3;
+        stick.classList.add('active');
+        e.preventDefault();
+      }
+
+      function onTouchMove(e) {
+        const touch = Array.from(e.changedTouches).find(t => t.identifier === activeTouchId);
+        if (!touch) return;
+        const dx = touch.clientX - baseCenter.x;
+        const dy = touch.clientY - baseCenter.y;
+        const maxDist = baseCenter.maxDist || 36;
+        const dist = Math.min(maxDist, Math.sqrt(dx * dx + dy * dy));
+        const angle = Math.atan2(dy, dx);
+        const clampX = Math.cos(angle) * dist;
+        const clampY = Math.sin(angle) * dist;
+        stick.style.transform = `translate(calc(-50% + ${clampX}px), calc(-50% + ${clampY}px))`;
+        setKeysFromStick(clampX, clampY);
+        e.preventDefault();
+      }
+
+      function onTouchEnd(e) {
+        const touch = Array.from(e.changedTouches).find(t => t.identifier === activeTouchId);
+        if (!touch) return;
+        activeTouchId = null;
+        stick.style.transform = 'translate(-50%, -50%)';
+        stick.classList.remove('active');
+        keys['ArrowUp'] = false;
+        keys['ArrowDown'] = false;
+        keys['ArrowLeft'] = false;
+        keys['ArrowRight'] = false;
+      }
+
+      base.addEventListener('touchstart', onTouchStart, { passive: false });
+      document.addEventListener('touchmove', onTouchMove, { passive: false });
+      document.addEventListener('touchend', onTouchEnd, { passive: true });
+      document.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    })();
 
     lastTime = performance.now();
     animationId = requestAnimationFrame(gameLoop);
