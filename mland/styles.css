@@ -29,8 +29,9 @@ body {
   position: relative;
   width: 100%;
   max-width: min(700px, 95vw);
-  min-height: 520px;
+  min-height: min(520px, 90vh);
   box-sizing: border-box;
+  padding: 0.5rem;
 }
 
 .hidden {
@@ -159,8 +160,9 @@ body {
   position: relative;
   background: linear-gradient(180deg, rgba(93, 155, 74, 0.3) 0%, rgba(61, 107, 50, 0.4) 100%);
   border-radius: 20px;
-  padding: 1rem;
+  padding: clamp(0.5rem, 2vw, 1rem);
   border: 4px solid var(--accent-mint);
+  max-width: 100%;
 }
 
 /* D-pad for touch devices */
@@ -261,6 +263,8 @@ body {
 #game-canvas {
   display: block;
   margin: 0 auto;
+  max-width: 100%;
+  height: auto;
   border-radius: 12px;
   background: var(--grass);
   border: 3px solid var(--grass-dark);
@@ -685,8 +689,9 @@ body {
 
 /* Battle Screen */
 #battle-screen {
-  min-height: 480px;
+  min-height: min(480px, 85vh);
   width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
   background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
   border-radius: 24px;
@@ -1047,4 +1052,51 @@ body {
   color: var(--text-cream);
   font-size: 0.8rem;
   margin-top: 0.25rem;
+}
+
+/* Responsive: smaller screens */
+@media (max-width: 480px) {
+  #game-container {
+    max-width: 100%;
+    padding: 0.25rem;
+  }
+
+  .game-title {
+    font-size: 1.75rem;
+  }
+
+  .hud {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+  }
+
+  .hud-stat {
+    font-size: 0.95rem;
+  }
+
+  .dpad-container {
+    width: 100px;
+    height: 100px;
+    right: 0.5rem;
+  }
+
+  .dpad-btn {
+    min-width: 28px;
+    min-height: 28px;
+    font-size: 1rem;
+  }
+
+  #monster-inventory {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .inventory-slot {
+    width: 48px;
+    padding: 0.35rem;
+  }
+
+  .inventory-slot .slot-name {
+    font-size: 0.55rem;
+  }
 }
