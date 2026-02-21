@@ -193,8 +193,12 @@
       var boyX = w / 2 - 70;
       var girlX = w / 2 + 70;
       var boxCenterY = 132;
-      var boyBtn = this.add.rectangle(boyX, boxCenterY, boxW, boxH, 0xf5efe6, 1).setStrokeStyle(3, playerType === 'boy' ? 0xc9a227 : 0xe8b4b8);
-      var girlBtn = this.add.rectangle(girlX, boxCenterY, boxW, boxH, 0xf5efe6, 1).setStrokeStyle(3, playerType === 'girl' ? 0xc9a227 : 0xe8b4b8);
+      var boyFill = playerType === 'boy' ? 0xb8d4c8 : 0xf5efe6;
+      var girlFill = playerType === 'girl' ? 0xb8d4c8 : 0xf5efe6;
+      var boyBorder = playerType === 'boy' ? 0x2d7a4a : 0xe8b4b8;
+      var girlBorder = playerType === 'girl' ? 0x2d7a4a : 0xe8b4b8;
+      var boyBtn = this.add.rectangle(boyX, boxCenterY, boxW, boxH, boyFill, 1).setStrokeStyle(3, boyBorder);
+      var girlBtn = this.add.rectangle(girlX, boxCenterY, boxW, boxH, girlFill, 1).setStrokeStyle(3, girlBorder);
       var imgScale = 0.38;
       var imgY = boxCenterY - 14;
       if (this.textures.exists('player-boy')) this.add.sprite(boyX, imgY, 'player-boy').setScale(imgScale);
@@ -230,7 +234,9 @@
         var row = Math.floor(i / cols);
         var x = startX + col * cellSpacing;
         var y = startY + row * cellSpacing;
-        var box = this.add.rectangle(x, y, 88, 88, 0xf5efe6, 1).setStrokeStyle(3, selected && selected.id === ch.id ? 0xc9a227 : 0xe8b4b8).setInteractive({ useHandCursor: true });
+        var boxFill = selected && selected.id === ch.id ? 0xb8d4c8 : 0xf5efe6;
+        var boxBorder = selected && selected.id === ch.id ? 0x2d7a4a : 0xe8b4b8;
+        var box = this.add.rectangle(x, y, 88, 88, boxFill, 1).setStrokeStyle(3, boxBorder).setInteractive({ useHandCursor: true });
         var emoji = this.add.text(x, y - 12, ch.icon, { fontSize: 40 }).setOrigin(0.5);
         var label = this.add.text(x, y + 28, ch.name, { fontFamily: 'Arial', fontSize: 11, color: '#8b6b7d', align: 'center', wordWrap: { width: 80 } }).setOrigin(0.5);
         box.on('pointerdown', function () {
