@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Math Party — A Fairy-Tale Adventure</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quando&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cream: #fef9f0;
+      --gold: #c9a227;
+      --rose: #e8b4b8;
+      --mint: #b8d4c8;
+      --sky: #a8c5e0;
+      --berry: #8b6b7d;
+      --ink: #2d2a3a;
+      --shadow: rgba(45, 42, 58, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: linear-gradient(160deg, #fef9f0 0%, #f5e6d3 50%, #e8dcc8 100%);
+      min-height: 100vh;
+      color: var(--ink);
+      overflow-x: hidden;
+    }
+
+    .screen {
+      display: none;
+      min-height: 100vh;
+      padding: 2rem;
+      animation: fadeIn 0.4s ease;
+    }
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    h1 {
+      font-family: 'Quando', serif;
+      font-size: clamp(1.8rem, 5vw, 2.5rem);
+      color: var(--berry);
+      text-align: center;
+      margin-bottom: 0.5rem;
+      text-shadow: 1px 1px 0 rgba(255,255,255,0.8);
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: var(--berry);
+      opacity: 0.9;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    /* Character select */
+    #character-select .card-wrap {
+      max-width: 90vw;
+      background: linear-gradient(180deg, #fff 0%, #faf5ed 100%);
+      border-radius: 24px;
+      padding: 2rem;
+      box-shadow: 0 12px 40px var(--shadow), 0 0 0 3px var(--gold), inset 0 1px 0 #fff;
+      border: 2px solid rgba(201, 162, 39, 0.4);
+    }
+
+    .character-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 1rem;
+      justify-items: center;
+      margin-top: 1rem;
+    }
+
+    .character-option {
+      width: 100%;
+      max-width: 110px;
+      padding: 1rem 0.5rem;
+      border: 3px solid transparent;
+      border-radius: 16px;
+      background: linear-gradient(145deg, #fff 0%, #f5efe6 100%);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-align: center;
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+    .character-option:hover {
+      border-color: var(--rose);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px var(--shadow);
+    }
+    .character-option.selected {
+      border-color: var(--gold);
+      background: linear-gradient(145deg, #fff9e6 0%, #f5efe6 100%);
+      box-shadow: 0 0 0 2px var(--gold);
+    }
+
+    .character-option .icon {
+      font-size: 2.5rem;
+      display: block;
+      margin-bottom: 0.35rem;
+      line-height: 1;
+    }
+    .character-option .label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--berry);
+      line-height: 1.2;
+    }
+
+    .btn-primary {
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 0.75rem 2rem;
+      margin-top: 1.5rem;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(180deg, var(--gold) 0%, #a8841f 100%);
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(201, 162, 39, 0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(201, 162, 39, 0.5);
+    }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Game board */
+    #game-board .board-layout {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .board-sidebar {
+      background: linear-gradient(180deg, #fff 0%, #faf5ed 100%);
+      border-radius: 20px;
+      padding: 1.25rem;
+      box-shadow: 0 8px 24px var(--shadow), 0 0 0 2px var(--gold);
+      border: 2px solid rgba(201, 162, 39, 0.3);
+      min-width: 160px;
+    }
+
+    .board-sidebar .sidebar-character {
+      text-align: center;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px dashed rgba(201, 162, 39, 0.4);
+    }
+
+    .board-sidebar .sidebar-character .icon {
+      font-size: 4rem;
+      display: block;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+
+    .board-sidebar .sidebar-character .name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--berry);
+      line-height: 1.2;
+    }
+
+    .board-sidebar .prizes-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--berry);
+      margin-bottom: 0.5rem;
+    }
+
+    .board-sidebar .collected-prizes {
+      list-style: none;
+      font-size: 0.8rem;
+      color: var(--ink);
+    }
+
+    .board-sidebar .collected-prizes li {
+      padding: 0.25rem 0;
+      padding-left: 1rem;
+      position: relative;
+    }
+
+    .board-sidebar .collected-prizes li::before {
+      content: '🎁';
+      position: absolute;
+      left: 0;
+      font-size: 0.75rem;
+    }
+
+    .board-sidebar .prizes-placeholder {
+      font-size: 0.8rem;
+      color: var(--berry);
+      opacity: 0.8;
+      font-style: italic;
+    }
+    .board-sidebar .collected-prizes:not(.empty) ~ .prizes-placeholder {
+      display: none;
+    }
+
+    /* Character stage: doll/pet with prizes on them */
+    .character-stage {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 0.5rem;
+    }
+
+    .character-stage .character-emoji {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      line-height: 1;
+      z-index: 1;
+    }
+
+    .character-stage .prize-on-character {
+      position: absolute;
+      z-index: 2;
+      width: 28px;
+      height: 28px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .character-stage .prize-on-character svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+    }
+
+    .character-stage.end-screen-stage {
+      width: 140px;
+      height: 140px;
+      margin: 1rem auto;
+    }
+
+    .character-stage.end-screen-stage .character-emoji {
+      font-size: 5.5rem;
+    }
+
+    .character-stage.end-screen-stage .prize-on-character {
+      width: 36px;
+      height: 36px;
+    }
+
+    .prize-icon-inline {
+      display: inline-block;
+      width: 1.2em;
+      height: 1.2em;
+      vertical-align: -0.25em;
+      margin-right: 0.25rem;
+    }
+
+    .prize-icon-inline svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .cell.prize .prize-icon-cell {
+      width: 28px;
+      height: 28px;
+    }
+
+    .cell.prize .prize-icon-cell svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    #game-board .board-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .score-badge {
+      background: linear-gradient(145deg, #fff 0%, #f5efe6 100%);
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      font-weight: 700;
+      color: var(--berry);
+      border: 2px solid var(--rose);
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .board-container {
+      background: linear-gradient(180deg, #e8dfd0 0%, #d4c9b8 100%);
+      border-radius: 20px;
+      padding: 12px;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.1), 0 8px 24px var(--shadow);
+      border: 3px solid #c4b59a;
+    }
+
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 48px);
+      grid-template-rows: repeat(7, 48px);
+      gap: 2px;
+      background: #c4b59a;
+      padding: 2px;
+      border-radius: 12px;
+    }
+
+    .cell {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(145deg, #f5efe6 0%, #e8dfd0 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      position: relative;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+
+    .cell.prize {
+      background: linear-gradient(145deg, #fff5e6 0%, #ffe4c4 100%);
+      border: 2px dashed var(--gold);
+    }
+
+    .cell.player {
+      background: linear-gradient(145deg, var(--mint) 0%, #9bc4b4 100%);
+      border: 2px solid var(--berry);
+      z-index: 2;
+      font-size: 2rem;
+    }
+
+    .controls-hint {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: var(--berry);
+      opacity: 0.9;
+    }
+
+    /* Math problem screen */
+    #math-screen .problem-card {
+      max-width: 360px;
+      width: 100%;
+      background: linear-gradient(180deg, #fff 0%, #faf5ed 100%);
+      border-radius: 24px;
+      padding: 2rem;
+      box-shadow: 0 12px 40px var(--shadow), 0 0 0 3px var(--gold);
+      border: 2px solid rgba(201, 162, 39, 0.4);
+    }
+
+    .math-prize-preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+      color: var(--berry);
+    }
+
+    .math-prize-preview .prize-icon-preview {
+      width: 40px;
+      height: 40px;
+    }
+
+    .math-prize-preview .prize-icon-preview svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .problem-text {
+      font-family: 'Quando', serif;
+      font-size: 2.5rem;
+      text-align: center;
+      margin: 1.5rem 0;
+      color: var(--berry);
+    }
+
+    .answer-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-top: 1.5rem;
+    }
+
+    .answer-btn {
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      min-width: 64px;
+      padding: 0.75rem 1.25rem;
+      border: 3px solid var(--sky);
+      border-radius: 12px;
+      background: linear-gradient(180deg, #fff 0%, #e8f2f8 100%);
+      color: var(--ink);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .answer-btn:hover {
+      border-color: var(--gold);
+      background: linear-gradient(180deg, #fff9e6 0%, #f5efe6 100%);
+      transform: scale(1.05);
+    }
+
+    .feedback {
+      margin-top: 1rem;
+      font-weight: 700;
+      text-align: center;
+      min-height: 1.5rem;
+    }
+    .feedback.correct { color: #2d7a4a; }
+    .feedback.incorrect { color: #b53d3d; }
+
+    /* Well Done screen */
+    #end-screen .trophy-card {
+      max-width: 480px;
+      width: 100%;
+      background: linear-gradient(180deg, #fff 0%, #faf5ed 100%);
+      border-radius: 24px;
+      padding: 2rem;
+      box-shadow: 0 12px 40px var(--shadow), 0 0 0 3px var(--gold);
+      border: 2px solid rgba(201, 162, 39, 0.4);
+    }
+
+    .well-done-title {
+      font-family: 'Quando', serif;
+      font-size: 2rem;
+      color: var(--gold);
+      text-align: center;
+      margin-bottom: 0.5rem;
+      text-shadow: 1px 1px 0 rgba(255,255,255,0.8);
+    }
+
+    .stats-line {
+      text-align: center;
+      font-size: 1.2rem;
+      color: var(--berry);
+      margin-bottom: 1.5rem;
+    }
+
+    .character-showcase {
+      text-align: center;
+      margin: 1.5rem 0;
+    }
+    .character-showcase .big-icon {
+      font-size: 4rem;
+      display: inline-block;
+      margin-bottom: 0.5rem;
+    }
+    .character-showcase .char-name {
+      font-weight: 700;
+      color: var(--berry);
+    }
+
+    .prizes-won-title {
+      font-weight: 700;
+      color: var(--berry);
+      margin: 1rem 0 0.5rem;
+      font-size: 1rem;
+    }
+
+    .prizes-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      list-style: none;
+    }
+    .prizes-list li {
+      background: linear-gradient(145deg, #fff5e6 0%, #ffe4c4 100%);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      border: 1px solid rgba(201, 162, 39, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <!-- Prize icon SVGs (symbols for use elsewhere) -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;">
+    <defs>
+      <symbol id="icon-crown" viewBox="0 0 32 32"><path fill="#c9a227" stroke="#8b6914" stroke-width="1.5" d="M4 22h24v4H4zm4-8l4-6 4 4 4-4 4 6 4-8-6 2-4-4-4 4-6-2 4 8z"/></symbol>
+      <symbol id="icon-dress" viewBox="0 0 32 32"><path fill="#e8b4b8" stroke="#8b6b7d" stroke-width="1.2" d="M16 2l-4 6v4h2l-2 14h8l-2-14h2V8l-4-6z"/><path fill="#c9a227" d="M14 8h4v2h-4z"/></symbol>
+      <symbol id="icon-bow" viewBox="0 0 32 32"><ellipse fill="#e8b4b8" stroke="#8b6b7d" stroke-width="1.2" cx="16" cy="16" rx="10" ry="6"/><circle fill="#8b6b7d" cx="16" cy="16" r="2"/><path fill="none" stroke="#8b6b7d" stroke-width="1" d="M10 12v8M22 12v8"/></symbol>
+      <symbol id="icon-necklace" viewBox="0 0 32 32"><path fill="none" stroke="#c9a227" stroke-width="2" d="M8 14c0-4 4-8 8-8s8 4 8 8"/><circle fill="#c9a227" cx="16" cy="18" r="4"/><circle fill="#fff" cx="16" cy="18" r="1.5"/></symbol>
+      <symbol id="icon-hat" viewBox="0 0 32 32"><path fill="#8b6b7d" stroke="#2d2a3a" stroke-width="1" d="M6 12c0 0 6-8 10-8s10 8 10 8v2H6v-2z"/><rect fill="#e8b4b8" x="4" y="14" width="24" height="4" rx="1"/></symbol>
+      <symbol id="icon-toy" viewBox="0 0 32 32"><circle fill="#d4a574" stroke="#8b6914" stroke-width="1.2" cx="16" cy="18" r="8"/><circle fill="#2d2a3a" cx="14" cy="16" r="1.5"/><circle fill="#2d2a3a" cx="18" cy="16" r="1.5"/><ellipse fill="#8b6914" cx="16" cy="20" rx="2" ry="1"/></symbol>
+      <symbol id="icon-bag" viewBox="0 0 32 32"><path fill="#8b6b7d" stroke="#2d2a3a" stroke-width="1" d="M10 8h12l2 16H8L10 8z"/><path fill="#e8b4b8" d="M12 8v2h8V8h2v2h-2v2h-8v-2h-2V8z"/></symbol>
+      <symbol id="icon-book" viewBox="0 0 32 32"><path fill="#a8c5e0" stroke="#5a7a9a" stroke-width="1" d="M8 4v24h16V4H8zm2 2h12v20H10V6z"/><path fill="#8b6b7d" d="M10 10h12v1H10zm0 4h12v1H10zm0 4h8v1h-8z"/></symbol>
+      <symbol id="icon-cup" viewBox="0 0 32 32"><path fill="#fff" stroke="#c9a227" stroke-width="1.2" d="M8 6h4l2 4h4l2-4h4v14H8V6z"/><path fill="#e8b4b8" d="M10 8v10h12V8h-2v8h-8V8z"/></symbol>
+      <symbol id="icon-bicycle" viewBox="0 0 32 32"><circle fill="none" stroke="#2d2a3a" stroke-width="2" cx="10" cy="22" r="5"/><circle fill="none" stroke="#2d2a3a" stroke-width="2" cx="22" cy="22" r="5"/><path fill="none" stroke="#2d2a3a" stroke-width="1.5" d="M15 22h2l4-10h-4l-2 4M17 12l2 10M22 12l-3 10"/></symbol>
+      <symbol id="icon-skates" viewBox="0 0 32 32"><path fill="#8b6b7d" stroke="#2d2a3a" stroke-width="1" d="M6 20l4-12h12l2 8-6 4h-6l-2 4H6z"/><line x1="8" y1="24" x2="24" y2="24" stroke="#2d2a3a" stroke-width="1"/></symbol>
+      <symbol id="icon-glasses" viewBox="0 0 32 32"><circle fill="none" stroke="#2d2a3a" stroke-width="1.5" cx="10" cy="16" r="5"/><circle fill="none" stroke="#2d2a3a" stroke-width="1.5" cx="22" cy="16" r="5"/><path fill="none" stroke="#2d2a3a" stroke-width="1.5" d="M15 16h2M6 12l-2-2M26 12l2-2"/></symbol>
+      <symbol id="icon-flower" viewBox="0 0 32 32"><circle fill="#c9a227" cx="16" cy="16" r="3"/><ellipse fill="#e8b4b8" cx="16" cy="8" rx="3" ry="5"/><ellipse fill="#e8b4b8" cx="16" cy="24" rx="3" ry="5"/><ellipse fill="#e8b4b8" cx="8" cy="16" rx="5" ry="3"/><ellipse fill="#e8b4b8" cx="24" cy="16" rx="5" ry="3"/></symbol>
+      <symbol id="icon-star" viewBox="0 0 32 32"><path fill="#c9a227" d="M16 2l4 10 10 2-7 7 2 10-9-5-9 5 2-10-7-7 10-2z"/></symbol>
+      <symbol id="icon-leaf" viewBox="0 0 32 32"><path fill="#7cb87c" stroke="#4a7a4a" stroke-width="1" d="M16 4c-8 8-8 20 0 24s8-16 0-24z"/></symbol>
+      <symbol id="icon-bowtie" viewBox="0 0 32 32"><path fill="#8b6b7d" d="M16 12l-6 8h4l2-4 2 4h4l-6-8z"/><path fill="#e8b4b8" d="M10 14l2 4 4-6 4 6 2-4-2-2h-12z"/></symbol>
+      <symbol id="icon-collar" viewBox="0 0 32 32"><path fill="none" stroke="#c9a227" stroke-width="2.5" d="M6 16h20"/><circle fill="#c9a227" cx="8" cy="16" r="2.5"/><circle fill="#c9a227" cx="24" cy="16" r="2.5"/><path fill="#8b6b7d" d="M16 14v4h2v-4z"/></symbol>
+      <symbol id="icon-saddle" viewBox="0 0 32 32"><path fill="#8b6914" stroke="#5a450a" stroke-width="1" d="M6 14c0 0 4-6 10-6s10 6 10 6v4H6v-4z"/><path fill="#d4a574" d="M8 16h16v4H8z"/></symbol>
+      <symbol id="icon-wing" viewBox="0 0 32 32"><path fill="#a8c5e0" stroke="#5a7a9a" stroke-width="1" d="M16 8c-6 4-10 12-10 20l10-4 10 4c0-8-4-16-10-20z"/></symbol>
+      <symbol id="icon-wand" viewBox="0 0 32 32"><path fill="#c9a227" stroke="#8b6914" stroke-width="1" d="M20 4l2 4-8 8-2-2 8-8z"/><path fill="#a8c5e0" d="M14 10l8 8-12 12-8-8z"/></symbol>
+      <symbol id="icon-crystal" viewBox="0 0 32 32"><path fill="#a8c5e0" stroke="#5a7a9a" stroke-width="1" d="M16 2l12 14-6 14H10l-6-14z"/><path fill="rgba(255,255,255,0.4)" d="M16 6l8 10-4 10h-8l-4-10z"/></symbol>
+      <symbol id="icon-bell" viewBox="0 0 32 32"><path fill="#c9a227" stroke="#8b6914" stroke-width="1" d="M16 4c-4 0-8 3-8 8v4c0 4-2 6-4 8h24c-2-2-4-4-4-8v-4c0-5-4-8-8-8z"/><path fill="#8b6914" d="M16 24c2 0 4-1 4-4h-8c0 3 2 4 4 4z"/></symbol>
+      <symbol id="icon-blanket" viewBox="0 0 32 32"><rect fill="#e8b4b8" stroke="#8b6b7d" stroke-width="1" x="4" y="8" width="24" height="16" rx="2"/><path fill="#c9a227" d="M8 12h4v4H8zm8 0h4v4h-4zm-8 8h4v2H8zm8 0h4v2h-4z"/></symbol>
+      <symbol id="icon-ball" viewBox="0 0 32 32"><circle fill="#e8b4b8" stroke="#8b6b7d" stroke-width="1.5" cx="16" cy="16" r="10"/><path fill="none" stroke="#8b6b7d" stroke-width="1" d="M16 6c-4 4-6 10-6 10s2 6 6 10 6-4 10-6-4-6-10-10z"/></symbol>
+      <symbol id="icon-fish" viewBox="0 0 32 32"><ellipse fill="#5a7a9a" cx="16" cy="16" rx="10" ry="6"/><path fill="#a8c5e0" d="M8 16h14l-4 4 6 2-2-6 4-4H8z"/><circle fill="#2d2a3a" cx="20" cy="15" r="1.5"/></symbol>
+      <symbol id="icon-carrot" viewBox="0 0 32 32"><path fill="#e8754a" stroke="#c95a2a" stroke-width="1" d="M16 8l-4 20h8L16 8z"/><path fill="#7cb87c" d="M14 8l2 2 2-2-2-2z"/></symbol>
+      <symbol id="icon-egg" viewBox="0 0 32 32"><ellipse fill="#fef9f0" stroke="#d4c9b8" stroke-width="1.2" cx="16" cy="18" rx="8" ry="10"/><path fill="rgba(255,255,255,0.5)" d="M12 14c2-1 6 0 8 2-1 4-4 6-8 6-3-2-2-6 0-8z"/></symbol>
+      <symbol id="icon-umbrella" viewBox="0 0 32 32"><path fill="#a8c5e0" stroke="#5a7a9a" stroke-width="1" d="M16 4v2C8 8 4 14 4 20h24c0-6-4-12-12-14V4h-4z"/><path fill="#8b6b7d" d="M15 20v8h2v-8z"/></symbol>
+      <symbol id="icon-scarf" viewBox="0 0 32 32"><path fill="#e8b4b8" stroke="#8b6b7d" stroke-width="1" d="M6 14h20v6H6z"/><path fill="#c9a227" d="M6 14l4-4 4 4v6H6z"/></symbol>
+      <symbol id="icon-horn" viewBox="0 0 32 32"><path fill="#c9a227" stroke="#8b6914" stroke-width="1" d="M18 4l2 24-4 2-2-12-4 10-2-24 10 0z"/></symbol>
+      <symbol id="icon-bowl" viewBox="0 0 32 32"><ellipse fill="#e8dfd0" stroke="#c4b59a" stroke-width="1" cx="16" cy="18" rx="10" ry="4"/><path fill="none" stroke="#c4b59a" stroke-width="1" d="M8 18c0 0 2 4 8 4s8-4 8-4"/></symbol>
+      <symbol id="icon-bone" viewBox="0 0 32 32"><path fill="#f5efe6" stroke="#c4b59a" stroke-width="1.2" d="M8 14c-2 0-2 2-2 4s0 4 2 4h2v-2H8v-2h18v2h-2v2h2c2 0 2-2 2-4s0-4-2-4H10v2h16v2H8z"/></symbol>
+      <symbol id="icon-castle" viewBox="0 0 32 32"><path fill="#a8c5e0" stroke="#5a7a9a" stroke-width="1" d="M4 32V12h8v6h8v-6h8v20H4z"/><rect fill="#8b6b7d" x="12" y="18" width="8" height="14"/><path fill="#c9a227" d="M2 12l6-8 6 4 6-4 6 4 6-8v8h-4v12H4V12H2z"/></symbol>
+      <symbol id="icon-shell" viewBox="0 0 32 32"><path fill="#e8dfd0" stroke="#c4b59a" stroke-width="1" d="M16 4c-8 6-12 14-12 22 0 0 12-4 12-4s12 4 12 4c0-8-4-16-12-22z"/></symbol>
+      <symbol id="icon-pearl" viewBox="0 0 32 32"><circle fill="#fef9f0" stroke="#d4c9b8" stroke-width="1" cx="16" cy="16" r="6"/><path fill="rgba(255,255,255,0.8)" d="M12 14c2 0 4 2 4 4s-2 4-4 4c0-2 2-4 4-4s-2-2-4-2z"/></symbol>
+      <symbol id="icon-sparkle" viewBox="0 0 32 32"><path fill="#c9a227" d="M16 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/><path fill="#c9a227" opacity="0.8" d="M8 20l1 3 3 1-3 1-1 3-1-3-3-1 3-1z"/><path fill="#c9a227" opacity="0.6" d="M22 24l1 2 2 1-2 1-1 2-1-2-2-1 2-1z"/></symbol>
+      <symbol id="icon-gift" viewBox="0 0 32 32"><rect fill="#e8b4b8" x="6" y="12" width="20" height="12" rx="1"/><path fill="#7cb87c" d="M16 12V8l-4 2 2 2h2zm0 0l4-2 2 2h-6z"/><path fill="#c9a227" d="M14 12h4v12h-4zm0 12h8v4h-8z"/></symbol>
+    </defs>
+  </svg>
+
+  <!-- Character Select -->
+  <section id="character-select" class="screen active">
+    <h1>Math Party</h1>
+    <p class="subtitle">Choose your friend for a fairy-tale adventure</p>
+    <div class="card-wrap">
+      <div class="character-grid" id="character-grid"></div>
+      <div style="text-align: center;">
+        <button type="button" class="btn-primary" id="btn-start" disabled>Start Adventure</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Game Board -->
+  <section id="game-board" class="screen">
+    <h1>Math Party</h1>
+    <div class="board-layout">
+      <aside class="board-sidebar">
+        <div class="sidebar-character">
+          <div id="sidebar-character-stage"></div>
+          <span class="name" id="sidebar-character-name">Your friend</span>
+        </div>
+        <p class="prizes-title">My Prizes</p>
+        <ul class="collected-prizes" id="sidebar-prizes-list"></ul>
+        <p class="prizes-placeholder">Solve math problems at gift spaces to collect prizes!</p>
+      </aside>
+      <div>
+        <div class="board-header">
+          <span class="score-badge">Prizes: <span id="prize-count">0</span> / 10</span>
+        </div>
+        <div class="board-container">
+          <div class="board-grid" id="board-grid"></div>
+        </div>
+        <p class="controls-hint">Use arrow keys or tap the buttons below to move. Land on a gift to solve a math problem!</p>
+        <div style="display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap; justify-content:center;">
+          <button type="button" class="answer-btn" id="btn-up">↑</button>
+          <div style="display:flex; flex-direction:column; gap:0.25rem;">
+            <button type="button" class="answer-btn" id="btn-left">←</button>
+            <button type="button" class="answer-btn" id="btn-right">→</button>
+          </div>
+          <button type="button" class="answer-btn" id="btn-down">↓</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Math Problem -->
+  <section id="math-screen" class="screen">
+    <h1>Solve to win the prize!</h1>
+    <div class="problem-card">
+      <div class="math-prize-preview" id="math-prize-preview"></div>
+      <p class="problem-text" id="problem-text">3 + 5 = ?</p>
+      <div class="answer-options" id="answer-options"></div>
+      <p class="feedback" id="math-feedback"></p>
+    </div>
+  </section>
+
+  <!-- Well Done -->
+  <section id="end-screen" class="screen">
+    <h1>Math Party</h1>
+    <div class="trophy-card">
+      <p class="well-done-title">Well Done!</p>
+      <p class="stats-line" id="stats-line">You got 10 out of 12 correct!</p>
+      <div class="character-showcase">
+        <div id="end-character-stage"></div>
+        <p class="char-name" id="end-character-name">American Girl Doll</p>
+      </div>
+      <p class="prizes-won-title">Prizes you won</p>
+      <ul class="prizes-list" id="end-prizes-list"></ul>
+      <div style="text-align: center; margin-top: 1.5rem;">
+        <button type="button" class="btn-primary" id="btn-play-again">Play Again</button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const CHARACTERS = [
+        { id: 'doll',     name: 'American Girl Doll', icon: '🪆', type: 'doll' },
+        { id: 'unicorn',  name: 'Unicorn',             icon: '🦄', type: 'pet' },
+        { id: 'dog',      name: 'Dog',                 icon: '🐕', type: 'pet' },
+        { id: 'bunny',    name: 'Bunny',               icon: '🐰', type: 'pet' },
+        { id: 'cat',      name: 'Cat',                 icon: '🐱', type: 'pet' },
+        { id: 'fish',     name: 'Fish',                icon: '🐠', type: 'pet' },
+        { id: 'butterfly', name: 'Butterfly',          icon: '🦋', type: 'pet' },
+        { id: 'ladybug',  name: 'Ladybug',             icon: '🐞', type: 'pet' },
+        { id: 'worm',     name: 'Worm',                icon: '🪱', type: 'pet' },
+      ];
+
+      const PRIZES_BY_CHARACTER = {
+        doll:      ['Sparkly Dress', 'Tiara', 'Mini Purse', 'Shoes', 'Necklace', 'Bow', 'Backpack', 'Book', 'Teddy Bear', 'Tea Set', 'Bicycle', 'Skates', 'Party Hat', 'Bracelet', 'Sunglasses'],
+        unicorn:   ['Golden Horn', 'Rainbow Saddle', 'Sparkle Wings', 'Flower Crown', 'Star Charm', 'Magic Wand', 'Crystal', 'Ribbon', 'Bell', 'Flower Wreath', 'Gem Collar', 'Cloud Blanket', 'Moon Necklace', 'Sun Crown', 'Fairy Dust'],
+        dog:       ['Collar', 'Toy Bone', 'Bandana', 'Bow', 'Dog Bowl', 'Leash', 'Treat Jar', 'Bed', 'Ball', 'Frisbee', 'Hat', 'Sweater', 'Badge', 'Backpack', 'Chew Toy'],
+        bunny:     ['Bow', 'Carrot Toy', 'Basket', 'Ribbon', 'Flower', 'Bell', 'Mini Hat', 'Scarf', 'Carrot Bag', 'Flower Crown', 'Egg Toy', 'Leaf Umbrella', 'Berry Basket', 'Patch Blanket', 'Carrot Necklace'],
+        cat:       ['Bow Tie', 'Toy Mouse', 'Collar', 'Cat Bed', 'Bell', 'Ribbon', 'Fish Toy', 'Hat', 'Scarf', 'Glasses', 'Crown', 'Bow', 'Yarn Ball', 'Feather Toy', 'Blanket'],
+        fish:      ['Castle', 'Seaweed', 'Treasure Chest', 'Bubble Ring', 'Shell', 'Star', 'Plant', 'Rock Cave', 'Pearl', 'Coral', 'Ship Wheel', 'Anchor', 'Diver', 'Shell House', 'Sea Star'],
+        butterfly: ['Flower Crown', 'Wing Clip', 'Tiny Crown', 'Ribbon', 'Dew Drop', 'Leaf Cape', 'Flower', 'Sparkle Dust', 'Berry Necklace', 'Petal Dress', 'Stem Belt', 'Seed Pouch', 'Leaf Hat', 'Vine Bracelet', 'Blossom'],
+        ladybug:   ['Leaf Umbrella', 'Spot Stickers', 'Tiny Crown', 'Flower', 'Dew Hat', 'Leaf Cape', 'Berry', 'Stem Scarf', 'Seed Beads', 'Petal Bow', 'Leaf Blanket', 'Daisy', 'Clover', 'Rain Drop', 'Sun Hat'],
+        worm:      ['Tiny Hat', 'Glasses', 'Apple Slice', 'Leaf Cape', 'Flower', 'Bow', 'Berry', 'Leaf Umbrella', 'Soil Blanket', 'Seed Pack', 'Tiny Scarf', 'Leaf Crown', 'Strawberry', 'Pea Pod', 'Carrot Top'],
+      };
+
+      var PRIZE_TO_ICON = {
+        'Sparkly Dress': 'dress', 'Tiara': 'crown', 'Mini Purse': 'bag', 'Shoes': 'skates', 'Necklace': 'necklace', 'Bow': 'bow', 'Backpack': 'bag', 'Book': 'book', 'Teddy Bear': 'toy', 'Tea Set': 'cup', 'Bicycle': 'bicycle', 'Skates': 'skates', 'Party Hat': 'hat', 'Bracelet': 'necklace', 'Sunglasses': 'glasses',
+        'Golden Horn': 'horn', 'Rainbow Saddle': 'saddle', 'Sparkle Wings': 'wing', 'Flower Crown': 'crown', 'Star Charm': 'star', 'Magic Wand': 'wand', 'Crystal': 'crystal', 'Ribbon': 'bow', 'Bell': 'bell', 'Flower Wreath': 'flower', 'Gem Collar': 'collar', 'Cloud Blanket': 'blanket', 'Moon Necklace': 'necklace', 'Sun Crown': 'crown', 'Fairy Dust': 'sparkle',
+        'Collar': 'collar', 'Toy Bone': 'bone', 'Bandana': 'scarf', 'Dog Bowl': 'bowl', 'Leash': 'collar', 'Treat Jar': 'cup', 'Bed': 'blanket', 'Ball': 'ball', 'Frisbee': 'ball', 'Hat': 'hat', 'Sweater': 'dress', 'Badge': 'star', 'Chew Toy': 'toy',
+        'Carrot Toy': 'carrot', 'Basket': 'bag', 'Flower': 'flower', 'Mini Hat': 'hat', 'Scarf': 'scarf', 'Carrot Bag': 'bag', 'Egg Toy': 'egg', 'Leaf Umbrella': 'umbrella', 'Berry Basket': 'bag', 'Patch Blanket': 'blanket', 'Carrot Necklace': 'necklace',
+        'Bow Tie': 'bowtie', 'Toy Mouse': 'toy', 'Cat Bed': 'blanket', 'Fish Toy': 'fish', 'Glasses': 'glasses', 'Crown': 'crown', 'Yarn Ball': 'ball', 'Feather Toy': 'toy', 'Blanket': 'blanket',
+        'Seaweed': 'leaf', 'Treasure Chest': 'bag', 'Bubble Ring': 'pearl', 'Plant': 'flower', 'Rock Cave': 'castle', 'Pearl': 'pearl', 'Coral': 'flower', 'Ship Wheel': 'star', 'Anchor': 'bone', 'Diver': 'toy', 'Shell House': 'shell', 'Sea Star': 'star',
+        'Wing Clip': 'wing', 'Tiny Crown': 'crown', 'Dew Drop': 'pearl', 'Leaf Cape': 'blanket', 'Sparkle Dust': 'sparkle', 'Berry Necklace': 'necklace', 'Petal Dress': 'dress', 'Stem Belt': 'scarf', 'Seed Pouch': 'bag', 'Leaf Hat': 'hat', 'Vine Bracelet': 'necklace', 'Blossom': 'flower',
+        'Leaf Umbrella': 'umbrella', 'Spot Stickers': 'sparkle', 'Tiny Crown': 'crown', 'Dew Hat': 'hat', 'Leaf Cape': 'blanket', 'Berry': 'flower', 'Stem Scarf': 'scarf', 'Seed Beads': 'pearl', 'Petal Bow': 'bow', 'Leaf Blanket': 'blanket', 'Daisy': 'flower', 'Clover': 'leaf', 'Rain Drop': 'pearl', 'Sun Hat': 'hat',
+        'Tiny Hat': 'hat', 'Glasses': 'glasses', 'Apple Slice': 'flower', 'Leaf Cape': 'blanket', 'Soil Blanket': 'blanket', 'Seed Pack': 'bag', 'Tiny Scarf': 'scarf', 'Leaf Crown': 'crown', 'Strawberry': 'flower', 'Pea Pod': 'leaf', 'Carrot Top': 'carrot'
+      };
+
+      var SLOT_POSITIONS = [
+        { left: '50%', top: '8%' },   { left: '50%', top: '28%' },  { left: '50%', top: '48%' },
+        { left: '18%', top: '42%' },  { left: '82%', top: '42%' },  { left: '50%', top: '68%' },
+        { left: '22%', top: '22%' },  { left: '78%', top: '22%' },  { left: '28%', top: '78%' },  { left: '72%', top: '78%' }
+      ];
+
+      function getIconId(prizeName) {
+        return PRIZE_TO_ICON[prizeName] || 'gift';
+      }
+
+      function prizeIconSvg(prizeName, className) {
+        var id = getIconId(prizeName);
+        return '<svg class="' + (className || '') + '" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><use href="#icon-' + id + '"/></svg>';
+      }
+
+      function renderCharacterStage(container, character, prizesWon, large) {
+        container.innerHTML = '';
+        var stage = document.createElement('div');
+        stage.className = 'character-stage' + (large ? ' end-screen-stage' : '');
+        var emoji = document.createElement('div');
+        emoji.className = 'character-emoji';
+        emoji.textContent = character.icon;
+        stage.appendChild(emoji);
+        (prizesWon || []).forEach(function (name, i) {
+          if (i >= SLOT_POSITIONS.length) return;
+          var pos = SLOT_POSITIONS[i];
+          var div = document.createElement('div');
+          div.className = 'prize-on-character';
+          div.style.left = pos.left;
+          div.style.top = pos.top;
+          div.innerHTML = prizeIconSvg(name);
+          stage.appendChild(div);
+        });
+        container.appendChild(stage);
+      }
+
+      const ROWS = 7, COLS = 7;
+      const TARGET_CORRECT = 10;
+
+      let state = {
+        character: null,
+        playerRow: 0,
+        playerCol: 0,
+        correctCount: 0,
+        totalAsked: 0,
+        prizesWon: [],
+        prizePositions: [],
+        currentProblem: null,
+        currentPrizePosition: null,
+      };
+
+      const characterGrid = document.getElementById('character-grid');
+      const btnStart = document.getElementById('btn-start');
+      const boardGrid = document.getElementById('board-grid');
+      const prizeCountEl = document.getElementById('prize-count');
+      const sidebarCharacterStage = document.getElementById('sidebar-character-stage');
+      const sidebarCharacterName = document.getElementById('sidebar-character-name');
+      const sidebarPrizesList = document.getElementById('sidebar-prizes-list');
+      const problemText = document.getElementById('problem-text');
+      const answerOptions = document.getElementById('answer-options');
+      const mathFeedback = document.getElementById('math-feedback');
+      const statsLine = document.getElementById('stats-line');
+      const endCharacterStage = document.getElementById('end-character-stage');
+      const endCharacterName = document.getElementById('end-character-name');
+      const endPrizesList = document.getElementById('end-prizes-list');
+      const mathPrizePreview = document.getElementById('math-prize-preview');
+      const btnPlayAgain = document.getElementById('btn-play-again');
+
+      function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+      }
+
+      function buildCharacterSelect() {
+        characterGrid.innerHTML = '';
+        CHARACTERS.forEach(ch => {
+          const div = document.createElement('div');
+          div.className = 'character-option';
+          div.dataset.id = ch.id;
+          div.innerHTML = `<span class="icon">${ch.icon}</span><span class="label">${ch.name}</span>`;
+          div.addEventListener('click', () => {
+            document.querySelectorAll('.character-option').forEach(o => o.classList.remove('selected'));
+            div.classList.add('selected');
+            state.character = ch;
+            btnStart.disabled = false;
+          });
+          characterGrid.appendChild(div);
+        });
+      }
+
+      btnStart.addEventListener('click', () => {
+        if (!state.character) return;
+        initBoard();
+        showScreen('game-board');
+      });
+
+      function getPrizePool() {
+        return PRIZES_BY_CHARACTER[state.character.id] || PRIZES_BY_CHARACTER.doll;
+      }
+
+      function initBoard() {
+        state.prizesWon = [];
+        state.correctCount = 0;
+        state.totalAsked = 0;
+        const pool = getPrizePool();
+        const used = new Set();
+        state.prizePositions = [];
+        const possible = [];
+        for (let r = 0; r < ROWS; r++)
+          for (let c = 0; c < COLS; c++)
+            if (r !== 0 || c !== 0) possible.push([r, c]);
+
+        for (let i = 0; i < 15; i++) {
+          const idx = Math.floor(Math.random() * possible.length);
+          const [r, c] = possible.splice(idx, 1)[0];
+          let name = pool[Math.floor(Math.random() * pool.length)];
+          while (used.has(name) && pool.length > used.size) name = pool[Math.floor(Math.random() * pool.length)];
+          used.add(name);
+          state.prizePositions.push({ row: r, col: c, name });
+        }
+
+        state.playerRow = 0;
+        state.playerCol = 0;
+        updateBoardSidebar();
+        renderBoard();
+        prizeCountEl.textContent = state.prizesWon.length;
+      }
+
+      function updateBoardSidebar() {
+        if (!state.character) return;
+        renderCharacterStage(sidebarCharacterStage, state.character, state.prizesWon, false);
+        sidebarCharacterName.textContent = state.character.name;
+        sidebarPrizesList.innerHTML = '';
+        if (state.prizesWon.length) {
+          sidebarPrizesList.classList.remove('empty');
+          state.prizesWon.forEach(function (name) {
+            var li = document.createElement('li');
+            li.innerHTML = '<span class="prize-icon-inline">' + prizeIconSvg(name) + '</span>' + name;
+            sidebarPrizesList.appendChild(li);
+          });
+        } else {
+          sidebarPrizesList.classList.add('empty');
+        }
+      }
+
+      function renderBoard() {
+        boardGrid.innerHTML = '';
+        var prizeByCell = {};
+        state.prizePositions.forEach(function (p) { prizeByCell[p.row + ',' + p.col] = p; });
+        for (var r = 0; r < ROWS; r++) {
+          for (var c = 0; c < COLS; c++) {
+            var cell = document.createElement('div');
+            cell.className = 'cell';
+            if (r === state.playerRow && c === state.playerCol) {
+              cell.classList.add('player');
+              cell.textContent = state.character.icon;
+            } else if (prizeByCell[r + ',' + c]) {
+              var prize = prizeByCell[r + ',' + c];
+              cell.classList.add('prize');
+              cell.innerHTML = '<span class="prize-icon-cell">' + prizeIconSvg(prize.name) + '</span>';
+            }
+            boardGrid.appendChild(cell);
+          }
+        }
+      }
+
+      function movePlayer(dr, dc) {
+        const nr = state.playerRow + dr, nc = state.playerCol + dc;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
+        state.playerRow = nr;
+        state.playerCol = nc;
+        const prize = state.prizePositions.find(p => p.row === nr && p.col === nc);
+        if (prize) {
+          state.currentPrizePosition = prize;
+          showMathProblem();
+        } else {
+          renderBoard();
+        }
+      }
+
+      function showMathProblem() {
+        const a = Math.floor(Math.random() * 11);
+        const b = Math.floor(Math.random() * 11);
+        const sum = a + b;
+        const optionsSet = new Set([sum]);
+        while (optionsSet.size < 4) {
+          const off = Math.floor(Math.random() * 13) - 6;
+          const v = Math.max(0, Math.min(20, sum + off));
+          optionsSet.add(v);
+        }
+        const options = Array.from(optionsSet);
+        for (let i = options.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [options[i], options[j]] = [options[j], options[i]];
+        }
+        state.currentProblem = { a, b, sum, options };
+        state.totalAsked++;
+        var prize = state.currentPrizePosition;
+        mathPrizePreview.innerHTML = '<span class="prize-icon-preview">' + prizeIconSvg(prize.name) + '</span><span>Win: ' + prize.name + '</span>';
+        problemText.textContent = `${a} + ${b} = ?`;
+        mathFeedback.textContent = '';
+        mathFeedback.className = 'feedback';
+        answerOptions.innerHTML = '';
+        options.forEach(val => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'answer-btn';
+          btn.textContent = val;
+          btn.addEventListener('click', () => submitAnswer(val));
+          answerOptions.appendChild(btn);
+        });
+        showScreen('math-screen');
+      }
+
+      function submitAnswer(val) {
+        const { sum } = state.currentProblem;
+        const correct = val === sum;
+        if (correct) {
+          state.correctCount++;
+          const prize = state.currentPrizePosition;
+          state.prizesWon.push(prize.name);
+          state.prizePositions = state.prizePositions.filter(p => p !== prize);
+          mathFeedback.textContent = 'Correct! You won: ' + prize.name + '!';
+          mathFeedback.className = 'feedback correct';
+        } else {
+          mathFeedback.textContent = 'Not quite. The answer was ' + sum + '. Try another prize!';
+          mathFeedback.className = 'feedback incorrect';
+        }
+        state.currentProblem = null;
+        state.currentPrizePosition = null;
+        setTimeout(() => {
+          if (state.correctCount >= TARGET_CORRECT) {
+            showEndScreen();
+          } else {
+            updateBoardSidebar();
+            renderBoard();
+            prizeCountEl.textContent = state.prizesWon.length;
+            showScreen('game-board');
+          }
+        }, 1500);
+      }
+
+      function showEndScreen() {
+        statsLine.textContent = 'You got ' + state.correctCount + ' out of ' + state.totalAsked + ' correct!';
+        renderCharacterStage(endCharacterStage, state.character, state.prizesWon, true);
+        endCharacterName.textContent = state.character.name;
+        endPrizesList.innerHTML = state.prizesWon.map(function (p) {
+          return '<li><span class="prize-icon-inline">' + prizeIconSvg(p) + '</span>' + p + '</li>';
+        }).join('');
+        showScreen('end-screen');
+      }
+
+      btnPlayAgain.addEventListener('click', () => {
+        state.character = null;
+        document.querySelectorAll('.character-option').forEach(o => o.classList.remove('selected'));
+        btnStart.disabled = true;
+        showScreen('character-select');
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (document.getElementById('game-board').classList.contains('active')) {
+          if (e.key === 'ArrowUp') { e.preventDefault(); movePlayer(-1, 0); }
+          if (e.key === 'ArrowDown') { e.preventDefault(); movePlayer(1, 0); }
+          if (e.key === 'ArrowLeft') { e.preventDefault(); movePlayer(0, -1); }
+          if (e.key === 'ArrowRight') { e.preventDefault(); movePlayer(0, 1); }
+        }
+      });
+
+      document.getElementById('btn-up').addEventListener('click', () => movePlayer(-1, 0));
+      document.getElementById('btn-down').addEventListener('click', () => movePlayer(1, 0));
+      document.getElementById('btn-left').addEventListener('click', () => movePlayer(0, -1));
+      document.getElementById('btn-right').addEventListener('click', () => movePlayer(0, 1));
+
+      buildCharacterSelect();
+    })();
+  </script>
+</body>
+</html>
