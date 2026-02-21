@@ -130,6 +130,25 @@
       margin-bottom: 15px;
       text-align: center;
     }
+    .game-over-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .win-celebration-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: none;
+    }
+    .win-celebration-canvas.visible {
+      display: block;
+    }
     .modal button {
       padding: 12px 40px;
       font-size: 1.1rem;
@@ -177,7 +196,12 @@
       .instructions { font-size: 0.7rem; margin-top: 4px; }
       .ui-overlay { padding: 10px 14px; }
       .score-display { font-size: 1.4rem; gap: 18px; }
-      .period-time { font-size: 0.95rem; }
+      .period-time { font-size: 0.8rem; }
+    }
+    @media (max-width: 400px) {
+      .ui-overlay { padding: 8px 10px; }
+      .score-display { font-size: 1.2rem; gap: 14px; }
+      .period-time { font-size: 0.7rem; }
     }
     @media (orientation: landscape) and (max-height: 500px) {
       body { padding: 4px 12px; }
@@ -186,6 +210,9 @@
       .game-row { margin-bottom: 2px; min-height: 28px; }
       #pauseBtn { padding: 4px 16px; font-size: 0.85rem; }
       .instructions { font-size: 0.6rem; margin-top: 2px; }
+      .ui-overlay { padding: 8px 12px; }
+      .score-display { font-size: 1.2rem; gap: 14px; }
+      .period-time { font-size: 0.7rem; }
     }
     @media (orientation: landscape) and (max-height: 400px) {
       body { padding: 2px 8px; }
@@ -194,6 +221,9 @@
       .game-row { margin-bottom: 0; min-height: 24px; }
       #pauseBtn { padding: 2px 12px; font-size: 0.75rem; }
       .instructions { font-size: 0.55rem; margin-top: 0; }
+      .ui-overlay { padding: 6px 10px; }
+      .score-display { font-size: 1rem; gap: 12px; }
+      .period-time { font-size: 0.6rem; }
     }
 
     #joystickContainer {
@@ -330,9 +360,12 @@
   </div>
 
   <div id="gameOverModal" class="modal hidden">
-    <h2 id="gameOverTitle">Game Over</h2>
-    <p id="gameOverText"></p>
-    <button id="playAgainBtn">Play Again</button>
+    <canvas id="winCelebrationCanvas" class="win-celebration-canvas" aria-hidden="true"></canvas>
+    <div class="game-over-content">
+      <h2 id="gameOverTitle">Game Over</h2>
+      <p id="gameOverText"></p>
+      <button id="playAgainBtn">Play Again</button>
+    </div>
   </div>
 
   <div id="joystickContainer" aria-hidden="true">
@@ -373,6 +406,11 @@
     let isOvertime = false;
     let lastTime = 0;
     let animationId;
+    let winFireworks = [];
+    let winConfetti = [];
+    let winCelebrationStartTime = 0;
+    let winCelebrationId = null;
+    let lastWinFrameTime = 0;
 
     class Vector {
       constructor(x = 0, y = 0) {
@@ -619,6 +657,103 @@
       ctx.restore();
     }
 
+    function initWinCelebration() {
+      const w = document.documentElement.clientWidth;
+      const h = document.documentElement.clientHeight;
+      const winCanvas = document.getElementById('winCelebrationCanvas');
+      winCanvas.width = w;
+      winCanvas.height = h;
+      winFireworks = [];
+      winConfetti = [];
+      winCelebrationStartTime = performance.now();
+      const colors = ['#ff6b35', '#4a90d9', '#ffd700', '#ff69b4', '#7b68ee', '#00ced1', '#ff4500'];
+      for (let i = 0; i < 6; i++) {
+        setTimeout(() => {
+          const x = w * (0.2 + Math.random() * 0.6);
+          const y = h * (0.2 + Math.random() * 0.4);
+          const hue = 20 + Math.random() * 40;
+          for (let j = 0; j < 50; j++) {
+            const angle = (Math.PI * 2 * j / 50) + Math.random();
+            const speed = 2 + Math.random() * 4;
+            winFireworks.push({
+              x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 1,
+              life: 1, hue: hue + (Math.random() - 0.5) * 20, size: 1.5 + Math.random() * 2
+            });
+          }
+        }, i * 400);
+      }
+      for (let i = 0; i < 120; i++) {
+        winConfetti.push({
+          x: w / 2, y: h / 2,
+          vx: (Math.random() - 0.5) * 14, vy: (Math.random() - 0.6) * 12,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size: 6 + Math.random() * 10, rotation: Math.random() * 360, rotSpeed: (Math.random() - 0.5) * 20,
+          life: 1
+        });
+      }
+    }
+
+    function updateWinCelebration(dt) {
+      const w = document.getElementById('winCelebrationCanvas').width;
+      const h = document.getElementById('winCelebrationCanvas').height;
+      const g = 0.2;
+      winFireworks.forEach(p => {
+        p.x += p.vx * dt / 16;
+        p.y += p.vy * dt / 16;
+        p.vy += 0.12 * dt / 16;
+        p.life -= dt / 2000;
+      });
+      winFireworks = winFireworks.filter(p => p.life > 0);
+      winConfetti.forEach(c => {
+        c.x += c.vx * dt / 16;
+        c.y += c.vy * dt / 16;
+        c.vy += g * dt / 16;
+        c.rotation += c.rotSpeed * dt / 100;
+        c.life -= dt / 4000;
+      });
+      winConfetti = winConfetti.filter(c => c.life > 0);
+    }
+
+    function drawWinCelebration() {
+      const winCanvas = document.getElementById('winCelebrationCanvas');
+      if (!winCanvas.classList.contains('visible')) return;
+      const w = winCanvas.width;
+      const h = winCanvas.height;
+      const wctx = winCanvas.getContext('2d');
+      wctx.clearRect(0, 0, w, h);
+      winFireworks.forEach(p => {
+        wctx.save();
+        wctx.globalAlpha = p.life;
+        wctx.fillStyle = `hsl(${p.hue}, 85%, 55%)`;
+        wctx.beginPath();
+        wctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        wctx.fill();
+        wctx.restore();
+      });
+      winConfetti.forEach(c => {
+        wctx.save();
+        wctx.globalAlpha = c.life;
+        wctx.translate(c.x, c.y);
+        wctx.rotate(c.rotation * Math.PI / 180);
+        wctx.fillStyle = c.color;
+        wctx.fillRect(-c.size / 2, -c.size / 4, c.size, c.size / 2);
+        wctx.restore();
+      });
+    }
+
+    function runWinCelebrationLoop(timestamp) {
+      const dt = lastWinFrameTime ? Math.min(timestamp - lastWinFrameTime, 50) : 16;
+      lastWinFrameTime = timestamp;
+      updateWinCelebration(dt);
+      drawWinCelebration();
+      if (document.getElementById('gameOverModal').classList.contains('hidden')) {
+        cancelAnimationFrame(winCelebrationId);
+        winCelebrationId = null;
+        return;
+      }
+      winCelebrationId = requestAnimationFrame(runWinCelebrationLoop);
+    }
+
     function checkGoals() {
       if (puck.pos.x - puck.radius < 0 && puck.pos.y > GOAL_TOP && puck.pos.y < GOAL_BOTTOM) {
         opponentScore++;
@@ -627,6 +762,7 @@
           document.getElementById('gameOverModal').classList.remove('hidden');
           document.getElementById('gameOverTitle').textContent = 'You Lose!';
           document.getElementById('gameOverText').textContent = `OT Final: ${playerScore} - ${opponentScore}`;
+          document.getElementById('winCelebrationCanvas').classList.remove('visible');
         } else {
           startGoalCelebration(false);
         }
@@ -636,9 +772,17 @@
         playerScore++;
         if (isOvertime) {
           gameState = 'gameover';
-          document.getElementById('gameOverModal').classList.remove('hidden');
-          document.getElementById('gameOverTitle').textContent = 'You Win!';
-          document.getElementById('gameOverText').textContent = `OT Final: ${playerScore} - ${opponentScore}`;
+          const modal = document.getElementById('gameOverModal');
+          const titleEl = document.getElementById('gameOverTitle');
+          const textEl = document.getElementById('gameOverText');
+          const winCanvas = document.getElementById('winCelebrationCanvas');
+          modal.classList.remove('hidden');
+          titleEl.textContent = 'Puuurrrfect!';
+          textEl.textContent = `OT Final: ${playerScore} - ${opponentScore}`;
+          winCanvas.classList.add('visible');
+          initWinCelebration();
+          lastWinFrameTime = 0;
+          winCelebrationId = requestAnimationFrame(runWinCelebrationLoop);
         } else {
           startGoalCelebration(true);
         }
@@ -693,6 +837,7 @@
         document.getElementById('gameOverModal').classList.remove('hidden');
         document.getElementById('gameOverTitle').textContent = 'Tie Game!';
         document.getElementById('gameOverText').textContent = `Final: ${playerScore} - ${opponentScore}`;
+        document.getElementById('winCelebrationCanvas').classList.remove('visible');
       } else if (currentPeriod < 3) {
         gameState = 'intermission';
         currentPeriod++;
@@ -710,10 +855,22 @@
           document.getElementById('intermissionText').textContent = 'Sudden death - first goal wins! 2 minutes. Tie if no goal.';
         } else {
           gameState = 'gameover';
-          document.getElementById('gameOverModal').classList.remove('hidden');
+          const modal = document.getElementById('gameOverModal');
+          const titleEl = document.getElementById('gameOverTitle');
+          const textEl = document.getElementById('gameOverText');
+          const winCanvas = document.getElementById('winCelebrationCanvas');
+          modal.classList.remove('hidden');
           const won = playerScore > opponentScore;
-          document.getElementById('gameOverTitle').textContent = won ? 'You Win!' : 'You Lose!';
-          document.getElementById('gameOverText').textContent = `Final: ${playerScore} - ${opponentScore}`;
+          titleEl.textContent = won ? 'Puuurrrfect!' : 'You Lose!';
+          textEl.textContent = `Final: ${playerScore} - ${opponentScore}`;
+          if (won) {
+            winCanvas.classList.add('visible');
+            initWinCelebration();
+            lastWinFrameTime = 0;
+            winCelebrationId = requestAnimationFrame(runWinCelebrationLoop);
+          } else {
+            winCanvas.classList.remove('visible');
+          }
         }
       }
     }
@@ -798,6 +955,11 @@
 
     document.getElementById('playAgainBtn').addEventListener('click', () => {
       document.getElementById('gameOverModal').classList.add('hidden');
+      document.getElementById('winCelebrationCanvas').classList.remove('visible');
+      if (winCelebrationId !== null) {
+        cancelAnimationFrame(winCelebrationId);
+        winCelebrationId = null;
+      }
       document.getElementById('startModal').classList.remove('hidden');
       document.getElementById('pauseBtn').classList.add('hidden');
     });
