@@ -392,6 +392,9 @@
       var tileW = TILE, tileH = TILE;
       if (newRow === row && newCol === col) return;
       if (newRow < 0 || newRow >= ROWS || newCol < 0 || newCol >= COLS) return;
+      var rowDiff = Math.abs(newRow - row);
+      var colDiff = Math.abs(newCol - col);
+      if (rowDiff + colDiff !== 1) return;
       this.moving = true;
       var prizePositions = this.registry.get('prizePositions');
       var targetX = origin.x + newCol * tileW + tileW / 2;
