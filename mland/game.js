@@ -417,31 +417,39 @@ function renderBattle() {
   document.getElementById('problem-text').textContent =
     `${b.problem.a} × ${b.problem.b} = ?`;
 
-  const optionsEl = document.getElementById('answer-options');
-  optionsEl.innerHTML = '';
-  const answers = [b.problem.answer, ...generateWrongAnswers(b.problem.answer)];
-  for (let i = answers.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [answers[i], answers[j]] = [answers[j], answers[i]];
+  const answerInput = document.getElementById('answer-input');
+  const answerForm = document.getElementById('answer-form');
+  const submitBtn = document.getElementById('answer-submit-btn');
+  if (answerInput) {
+    answerInput.value = '';
+    answerInput.disabled = false;
+    answerInput.focus();
   }
+  if (submitBtn) submitBtn.disabled = false;
 
-  answers.forEach(ans => {
-    const btn = document.createElement('button');
-    btn.className = 'answer-btn';
-    btn.textContent = ans;
-    btn.onclick = () => handleAnswer(btn, ans);
-    optionsEl.appendChild(btn);
-  });
+  answerForm?.removeEventListener('submit', handleAnswerSubmit);
+  answerForm?.addEventListener('submit', handleAnswerSubmit);
 
   document.getElementById('feedback-text').textContent = '';
   document.getElementById('feedback-text').className = 'feedback';
   document.getElementById('attack-buttons-panel').classList.add('hidden');
 }
 
-function handleAnswer(btn, answer) {
+function handleAnswerSubmit(e) {
+  e.preventDefault();
+  const input = document.getElementById('answer-input');
+  const raw = input?.value?.trim();
+  const answer = raw === '' ? NaN : parseInt(raw, 10);
+  if (isNaN(answer)) return;
+  handleAnswer(answer);
+}
+
+function handleAnswer(answer) {
   const b = gameState.currentBattle;
-  const opts = document.querySelectorAll('#answer-options .answer-btn');
-  opts.forEach(o => o.disabled = true);
+  const answerInput = document.getElementById('answer-input');
+  const submitBtn = document.getElementById('answer-submit-btn');
+  if (answerInput) answerInput.disabled = true;
+  if (submitBtn) submitBtn.disabled = true;
 
   gameState.problemsTotal++;
 
@@ -473,7 +481,12 @@ function handleAnswer(btn, answer) {
     } else {
       feedback.className = 'feedback incorrect';
       setTimeout(() => {
-        document.querySelectorAll('#answer-options .answer-btn').forEach(o => o.disabled = false);
+        if (answerInput) {
+          answerInput.value = '';
+          answerInput.disabled = false;
+          answerInput.focus();
+        }
+        if (submitBtn) submitBtn.disabled = false;
         feedback.textContent = '';
       }, 1000);
     }
