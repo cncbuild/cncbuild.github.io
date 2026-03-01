@@ -36,6 +36,8 @@
   const messageOverlay = document.getElementById('message-overlay');
   const messageText = document.getElementById('message-text');
   const messageBtn = document.getElementById('message-btn');
+  const splashScreen = document.getElementById('splash-screen');
+  const splashContinueBtn = document.getElementById('splash-continue-btn');
   const startScreen = document.getElementById('start-screen');
   const startBtn = document.getElementById('start-btn');
   const gameOverScreen = document.getElementById('game-over-screen');
@@ -71,7 +73,9 @@
   const shotCooldown = 200;
   const BOTTOM_HUD_HEIGHT = 56;
   const BOTTOM_HUD_HEIGHT_TOUCH = 190;
+  const MOBILE_LETTER_ORB_SCALE = 0.5;
   let effectiveBottomHudHeight = 56;
+  let letterOrbScale = 1;
   let hintUsedThisStage = false;
   let showLaserPath = false;
   let sCoins = 0;
@@ -102,6 +106,9 @@
     effectiveBottomHudHeight = document.body.classList.contains('touch-device')
       ? BOTTOM_HUD_HEIGHT_TOUCH
       : BOTTOM_HUD_HEIGHT;
+    letterOrbScale = document.body.classList.contains('touch-device')
+      ? MOBILE_LETTER_ORB_SCALE
+      : 1;
     if (gameStarted && ship.x === 0) ship.x = width / 2 - ship.w / 2;
   }
 
@@ -287,7 +294,7 @@
       y: margin + Math.random() * (height * 0.5 - margin),
       vx: (Math.random() - 0.5) * 1.2,
       vy: (Math.random() - 0.5) * 0.9,
-      radius: 22,
+      radius: 22 * letterOrbScale,
       fromWord
     };
   }
@@ -312,7 +319,7 @@
       y: margin + Math.random() * (height * 0.5 - margin),
       vx: (Math.random() - 0.5) * 1.4,
       vy: (Math.random() - 0.5) * 1.0,
-      radius: 18
+      radius: 18 * letterOrbScale
     };
   }
 
@@ -664,10 +671,20 @@
       ctx.fill();
       ctx.stroke();
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 24px Orbitron, monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(letter.char, letter.x, letter.y);
+      const ch = letter.char.toUpperCase();
+      if (ch === 'O') {
+        const r = letter.radius * 0.5;
+        ctx.beginPath();
+        ctx.arc(letter.x, letter.y, r * 0.85, 0, Math.PI * 2);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = Math.max(2.5, 3.5 * letterOrbScale);
+        ctx.stroke();
+      } else {
+        ctx.font = 'bold ' + (24 * letterOrbScale) + 'px Orbitron, monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(letter.char, letter.x, letter.y);
+      }
       ctx.restore();
     }
 
@@ -743,7 +760,7 @@
     playerShipImg.src = getCurrentShip().img;
     shuffledWords = WORDS.slice();
     shuffleArray(shuffledWords);
-    startScreen.style.display = 'none';
+    startScreen.classList.remove('visible');
     if (gameContainer) gameContainer.classList.add('playing');
     resize();
     ship.x = width / 2 - ship.w / 2;
@@ -773,7 +790,7 @@
         restartBtn.click();
         return;
       }
-      if (getComputedStyle(startScreen).display !== 'none') {
+      if (startScreen.classList.contains('visible')) {
         startBtn.click();
         return;
       }
@@ -803,6 +820,15 @@
     if (cy > height - effectiveBottomHudHeight - ship.h - 40) keys.fire = true;
   });
 
+  function dismissSplash() {
+    if (splashScreen && splashScreen.classList.contains('hidden')) return;
+    if (splashScreen) splashScreen.classList.add('hidden');
+    if (startScreen) startScreen.classList.add('visible');
+  }
+  if (splashScreen) {
+    splashScreen.addEventListener('click', dismissSplash);
+  }
+  if (splashContinueBtn) splashContinueBtn.addEventListener('click', (e) => { e.stopPropagation(); dismissSplash(); });
   startBtn.addEventListener('click', startGame);
   restartBtn.addEventListener('click', restartGame);
 

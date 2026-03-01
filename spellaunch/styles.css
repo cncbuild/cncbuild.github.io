@@ -61,11 +61,11 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  text-align: center;
+  text-align: right;
   pointer-events: none;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-end;
   gap: 2px;
 }
 
@@ -471,6 +471,65 @@ body.touch-device #hint-btn {
   pointer-events: auto;
 }
 
+/* Splash screen - first screen shown */
+#splash-screen {
+  position: absolute;
+  inset: 0;
+  background: #0a0a18;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  pointer-events: auto;
+  z-index: 4;
+}
+
+#splash-screen.hidden {
+  display: none;
+}
+
+#splash-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  flex: 1;
+  min-height: 0;
+}
+
+.splash-continue-btn {
+  flex-shrink: 0;
+  margin-bottom: clamp(12px, 3vmin, 24px);
+  padding: clamp(10px, 2vmin, 14px) clamp(20px, 5vw, 32px);
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(0.75rem, 2.2vmin, 0.95rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #c0a0ff;
+  background: rgba(60, 40, 100, 0.85);
+  border: 2px solid #8060e0;
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.splash-continue-btn:hover {
+  background: rgba(80, 55, 140, 0.95);
+  transform: scale(1.02);
+}
+
+/* Start screen hidden until splash is dismissed */
+#start-screen {
+  display: none;
+}
+
+#start-screen.visible {
+  display: flex;
+}
+
 #word-flash {
   position: absolute;
   inset: 0;
@@ -551,7 +610,7 @@ body.touch-device #hint-btn {
 }
 
 /* Start screen */
-#start-screen {
+#start-screen.visible {
   position: absolute;
   inset: 0;
   background: rgba(5, 5, 20, 0.95);
