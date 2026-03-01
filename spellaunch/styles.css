@@ -43,7 +43,7 @@ body {
   touch-action: none;
 }
 
-/* HUD - top: word blanks only, centered */
+/* HUD - top: word blanks centered on screen, Laser path button on left */
 #hud {
   position: absolute;
   top: 0;
@@ -52,17 +52,100 @@ body {
   padding: clamp(6px, 1.5vw, 12px) clamp(8px, 2vw, 16px);
   display: flex;
   align-items: center;
-  justify-content: center;
   background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
   pointer-events: none;
   z-index: 2;
 }
 
 #blanks-container {
+  position: absolute;
+  left: 0;
+  right: 0;
   text-align: center;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 
-/* HUD - bottom: clearing counter + energy vials, below ship */
+#mothership-badge.mothership-badge {
+  display: none;
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(0.5rem, 1.5vmin, 0.65rem);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #ffaa00;
+  text-shadow: 0 0 8px rgba(255, 170, 0, 0.6);
+}
+
+#mothership-badge.mothership-badge.visible {
+  display: block;
+}
+
+#hud .laser-path-btn,
+#hud .shop-btn {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+/* On touch: keep top HUD buttons visible and tappable (min touch target 44px) */
+body.touch-device #hud .laser-path-btn,
+body.touch-device #hud .shop-btn {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: clamp(0.7rem, 2vmin, 0.85rem);
+  padding: 8px 10px;
+}
+
+.shop-btn {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(0.6rem, 1.8vmin, 0.75rem);
+  font-weight: 600;
+  padding: clamp(4px, 1vmin, 6px) clamp(8px, 2vmin, 12px);
+  border: 2px solid #8060e0;
+  border-radius: 6px;
+  background: rgba(60, 40, 100, 0.7);
+  color: #c0a0ff;
+  cursor: pointer;
+  touch-action: manipulation;
+  white-space: nowrap;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.shop-btn:hover {
+  background: rgba(80, 55, 140, 0.9);
+  box-shadow: 0 0 12px rgba(120, 80, 200, 0.4);
+}
+
+.laser-path-btn {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(0.6rem, 1.8vmin, 0.75rem);
+  font-weight: 600;
+  padding: clamp(4px, 1vmin, 6px) clamp(8px, 2vmin, 12px);
+  border: 2px solid #00aa55;
+  border-radius: 6px;
+  background: rgba(0, 80, 40, 0.6);
+  color: #00ff88;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  white-space: nowrap;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.laser-path-btn:hover {
+  background: rgba(0, 100, 50, 0.8);
+}
+
+.laser-path-btn.on {
+  background: rgba(0, 150, 60, 0.9);
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
+  color: #fff;
+}
+
+/* HUD - bottom: clearing + energy row, then SCoins row */
 #hud-bottom {
   position: absolute;
   bottom: 0;
@@ -70,12 +153,176 @@ body {
   right: 0;
   padding: clamp(6px, 1.5vw, 12px) clamp(8px, 2vw, 16px);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: clamp(16px, 4vw, 32px);
+  gap: clamp(4px, 1vmin, 8px);
   background: linear-gradient(0deg, rgba(0,0,0,0.75) 0%, transparent 100%);
   pointer-events: none;
   z-index: 2;
+}
+
+/* On touch: lift bottom HUD above mobile controls so SCoins, clearing, energy are visible */
+body.touch-device #hud-bottom {
+  bottom: calc(clamp(44px, 10vmin, 56px) + 70px);
+}
+
+#hud-bottom-row1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 4vw, 32px);
+}
+
+#scoins-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scoins-label {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(0.7rem, 2vmin, 0.9rem);
+  font-weight: 700;
+}
+
+.rainbow-text {
+  background: linear-gradient(90deg, #ff0000, #ff8800, #ffdd00, #00cc00, #0088ff, #8800ff);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: rainbow-shift 4s linear infinite;
+}
+
+@keyframes rainbow-shift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Spaceship Shop overlay */
+#shop-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  pointer-events: none;
+}
+
+#shop-overlay.visible {
+  display: flex;
+  pointer-events: auto;
+}
+
+#shop-panel {
+  background: linear-gradient(180deg, #1a1530 0%, #0d0a20 100%);
+  border: 2px solid #8060e0;
+  border-radius: 12px;
+  padding: clamp(12px, 3vw, 24px);
+  max-width: 95%;
+  max-height: 90%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+#shop-panel h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(1rem, 4vmin, 1.5rem);
+  color: #c0a0ff;
+  margin: 0;
+}
+
+.shop-scoins {
+  margin: 0;
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(0.9rem, 2.5vmin, 1.1rem);
+}
+
+#shop-ships {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: clamp(12px, 3vw, 20px);
+}
+
+.shop-ship-card {
+  background: rgba(40, 30, 70, 0.8);
+  border: 2px solid #5040a0;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 100px;
+}
+
+.shop-ship-card.equipped {
+  border-color: #00ff88;
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.3);
+}
+
+.shop-ship-card img {
+  width: 56px;
+  height: 48px;
+  object-fit: contain;
+  display: block;
+}
+
+.shop-ship-card .ship-name {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(0.6rem, 1.8vmin, 0.75rem);
+  color: #e0e0ff;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.shop-ship-card .ship-price {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.7rem;
+  color: #a0a0c0;
+}
+
+.shop-ship-card .ship-action {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.65rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #8060e0;
+  background: rgba(80, 60, 140, 0.6);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.shop-ship-card .ship-action:hover:not(:disabled) {
+  background: rgba(100, 75, 180, 0.9);
+}
+
+.shop-ship-card .ship-action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.shop-close-btn {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.9rem;
+  padding: 10px 24px;
+  background: linear-gradient(180deg, #6040c0 0%, #402080 100%);
+  border: 2px solid #8060e0;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.shop-close-btn:hover {
+  transform: scale(1.05);
 }
 
 #blanks {

@@ -12,18 +12,22 @@
 <body>
   <div id="game-container">
     <div id="hud">
+      <button type="button" id="laser-path-btn" class="laser-path-btn" aria-label="Toggle laser path" title="Show or hide the laser path">Laser path</button>
       <div id="blanks-container">
+        <span id="mothership-badge" class="mothership-badge" aria-hidden="true">MOTHERSHIP</span>
         <span id="blanks"></span>
       </div>
+      <button type="button" id="shop-btn" class="shop-btn" aria-label="Spaceship Shop" title="Spaceship Shop">Shop</button>
     </div>
     <div id="hud-bottom">
-      <div id="clearing-container">
-        <span class="clearing-label">CLEAR</span>
-        <span id="clearing-count">7</span>
-      </div>
-      <div id="energy-container">
-        <span class="vial-label">ENERGY</span>
-        <div id="vials">
+      <div id="hud-bottom-row1">
+        <div id="clearing-container">
+          <span class="clearing-label">CLEAR</span>
+          <span id="clearing-count">7</span>
+        </div>
+        <div id="energy-container">
+          <span class="vial-label">ENERGY</span>
+          <div id="vials">
           <div class="vial full" data-vial="0"></div>
           <div class="vial full" data-vial="1"></div>
           <div class="vial full" data-vial="2"></div>
@@ -35,6 +39,10 @@
           <div class="vial full" data-vial="8"></div>
           <div class="vial full" data-vial="9"></div>
         </div>
+        </div>
+      </div>
+      <div id="scoins-row">
+        <span class="scoins-label rainbow-text">SCoins: <span id="scoins-count">0</span></span>
       </div>
     </div>
     <button type="button" id="hint-btn" class="hint-btn" aria-label="Show word again" title="Show word again (once per stage)">?</button>
@@ -55,6 +63,14 @@
         <h2>GAME OVER</h2>
         <p>No energy remaining.</p>
         <button id="restart-btn">Try Again</button>
+      </div>
+      <div id="shop-overlay">
+        <div id="shop-panel">
+          <h2>Spaceship Shop</h2>
+          <p class="shop-scoins"><span class="rainbow-text">SCoins: <span id="shop-scoins-count">0</span></span></p>
+          <div id="shop-ships"></div>
+          <button type="button" id="shop-close-btn" class="shop-close-btn">Close</button>
+        </div>
       </div>
     </div>
     <div id="mobile-controls" class="hidden">

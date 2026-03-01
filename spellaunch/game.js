@@ -11,10 +11,26 @@
 
   const DECOY_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+  const SHIPS = [
+    { id: 'default', name: 'Starter Ship', price: 0, img: 'spaceship.png?v=2' },
+    { id: 'gallaga', name: 'Galaga Ship', price: 10, img: 'gallaga.png?v=2' },
+    { id: 'millennium', name: 'Millennium Falcon', price: 30, img: 'millennium-falcon.png?v=2' },
+    { id: 'optimus', name: 'Optimus Prime', price: 60, img: 'optimus-prime.png?v=2' }
+  ];
+
   const canvas = document.getElementById('game-canvas');
   const ctx = canvas.getContext('2d');
+  const mothershipImg = new Image();
+  mothershipImg.src = 'mothership.png?v=2';
+  const playerShipImg = new Image();
   const blanksEl = document.getElementById('blanks');
+  const shopOverlay = document.getElementById('shop-overlay');
+  const shopShipsEl = document.getElementById('shop-ships');
+  const shopScoinsCountEl = document.getElementById('shop-scoins-count');
+  const shopCloseBtn = document.getElementById('shop-close-btn');
+  const shopBtn = document.getElementById('shop-btn');
   const clearingCountEl = document.getElementById('clearing-count');
+  const scoinsCountEl = document.getElementById('scoins-count');
   const vialsEl = document.querySelectorAll('.vial');
   const wordFlashEl = document.getElementById('word-flash');
   const messageOverlay = document.getElementById('message-overlay');
@@ -25,6 +41,8 @@
   const gameOverScreen = document.getElementById('game-over-screen');
   const restartBtn = document.getElementById('restart-btn');
   const hintBtn = document.getElementById('hint-btn');
+  const laserPathBtn = document.getElementById('laser-path-btn');
+  const mothershipBadgeEl = document.getElementById('mothership-badge');
   const gameContainer = document.getElementById('game-container');
   const btnLeft = document.getElementById('btn-left');
   const btnRight = document.getElementById('btn-right');
@@ -32,7 +50,7 @@
   const btnClear = document.getElementById('btn-clear');
 
   let width, height;
-  let ship = { x: 0, w: 48, h: 32, speed: 6 };
+  let ship = { x: 0, w: 48, h: 32, speed: 4.5 };
   let lasers = [];
   let letters = [];
   let orbs = [];
@@ -55,6 +73,17 @@
   const BOTTOM_HUD_HEIGHT_TOUCH = 190;
   let effectiveBottomHudHeight = 56;
   let hintUsedThisStage = false;
+  let showLaserPath = false;
+  let sCoins = 0;
+  const SCOINS_PER_STAGE = 20;
+  let ownedShips = ['default'];
+  let currentShipId = 'default';
+  let currentWordInStage = 0;
+  let wrongLettersThisStage = 0;
+  let mothership = { y: -250, state: 'hidden', explodeTime: 0 };
+  const MOTHERSHIP_FINAL_Y = 122;
+  const MOTHERSHIP_SPEED = 2.5;
+  const MAX_WRONG_LETTERS = 5;
 
   function resize() {
     const container = canvas.parentElement;
@@ -76,17 +105,132 @@
     if (gameStarted && ship.x === 0) ship.x = width / 2 - ship.w / 2;
   }
 
-  function getCurrentWord() {
-    return shuffledWords[stageIndex % shuffledWords.length];
+  function getCurrentShip() {
+    return SHIPS.find(s => s.id === currentShipId) || SHIPS[0];
   }
 
-  function startStage() {
+  function openShop() {
+    if (shopOverlay) shopOverlay.classList.add('visible');
+    if (shopScoinsCountEl) shopScoinsCountEl.textContent = sCoins;
+    renderShop();
+  }
+
+  function closeShop() {
+    if (shopOverlay) shopOverlay.classList.remove('visible');
+  }
+
+  function renderShop() {
+    if (!shopShipsEl) return;
+    shopShipsEl.innerHTML = '';
+    SHIPS.forEach(s => {
+      const owned = ownedShips.includes(s.id);
+      const equipped = currentShipId === s.id;
+      const canBuy = !owned && sCoins >= s.price;
+      const card = document.createElement('div');
+      card.className = 'shop-ship-card' + (equipped ? ' equipped' : '');
+      const img = document.createElement('img');
+      img.src = s.img;
+      img.alt = s.name;
+      const nameEl = document.createElement('div');
+      nameEl.className = 'ship-name';
+      nameEl.textContent = s.name;
+      card.appendChild(img);
+      card.appendChild(nameEl);
+      if (!owned && s.price > 0) {
+        const priceEl = document.createElement('div');
+        priceEl.className = 'ship-price';
+        priceEl.textContent = s.price + ' SCoins';
+        card.appendChild(priceEl);
+      }
+      const action = document.createElement('button');
+      action.type = 'button';
+      action.className = 'ship-action';
+      if (equipped) {
+        action.textContent = 'Equipped';
+        action.disabled = true;
+      } else if (owned) {
+        action.textContent = 'Equip';
+        action.onclick = () => equipShip(s.id);
+      } else {
+        action.textContent = 'Buy';
+        action.disabled = !canBuy;
+        if (canBuy) action.onclick = () => buyShip(s.id);
+      }
+      card.appendChild(action);
+      shopShipsEl.appendChild(card);
+    });
+  }
+
+  function buyShip(id) {
+    const s = SHIPS.find(ship => ship.id === id);
+    if (!s || s.price === 0 || ownedShips.includes(id) || sCoins < s.price) return;
+    sCoins -= s.price;
+    ownedShips.push(id);
+    updateSCoinsDisplay();
+    if (shopScoinsCountEl) shopScoinsCountEl.textContent = sCoins;
+    renderShop();
+  }
+
+  function equipShip(id) {
+    if (!ownedShips.includes(id)) return;
+    currentShipId = id;
+    const s = getCurrentShip();
+    playerShipImg.src = s.img;
+    renderShop();
+  }
+
+  function getCurrentWord() {
+    const idx = stageIndex * 2 + currentWordInStage;
+    return shuffledWords[idx % shuffledWords.length];
+  }
+
+  function loadSecondWord() {
+    currentWordInStage = 1;
     currentWord = getCurrentWord();
     nextLetterIndex = 0;
     filledWord = currentWord.split('').map(() => null);
     letters = [];
     orbs = [];
     lasers = [];
+    hintUsedThisStage = false;
+    updateHintButton();
+    const wordLetters = currentWord.split('');
+    const wrongCandidates = DECOY_LETTERS.split('').filter(ch => !currentWord.includes(ch));
+    shuffleArray(wrongCandidates);
+    const wrongLetters = wrongCandidates.slice(0, 5);
+    for (const ch of wordLetters) letters.push(createLetter(ch, true));
+    for (const ch of wrongLetters) letters.push(createLetter(ch, false));
+    for (let i = 0; i < 3; i++) orbs.push(createOrb());
+    ensureAllWordLettersPresent();
+    shuffleArray(letters);
+    wordFlashEl.textContent = currentWord;
+    wordFlashEl.classList.remove('fading');
+    wordFlashEl.classList.add('visible');
+    wordFlashPhase = 'visible';
+    wordFlashStartTime = performance.now();
+    if (mothershipBadgeEl) mothershipBadgeEl.classList.add('visible');
+    updateBlanksDisplay();
+  }
+
+  function triggerMothershipGameOver() {
+    showMessage('The mothership destroyed your ship!', false, () => {
+      messageOverlay.classList.remove('visible', 'active');
+      if (gameContainer) gameContainer.classList.remove('playing');
+      gameOverScreen.classList.add('visible');
+    });
+  }
+
+  function startStage() {
+    currentWordInStage = 0;
+    wrongLettersThisStage = 0;
+    mothership = { y: -250, state: 'hidden', explodeTime: 0 };
+    currentWord = getCurrentWord();
+    nextLetterIndex = 0;
+    filledWord = currentWord.split('').map(() => null);
+    letters = [];
+    orbs = [];
+    lasers = [];
+    if (mothershipBadgeEl) mothershipBadgeEl.classList.remove('visible');
 
     const wordLetters = currentWord.split('');
     const wrongCandidates = DECOY_LETTERS.split('').filter(ch => !currentWord.includes(ch));
@@ -104,6 +248,7 @@
       orbs.push(createOrb());
     }
 
+    ensureAllWordLettersPresent();
     shuffleArray(letters);
 
     wordFlashEl.textContent = currentWord;
@@ -115,6 +260,7 @@
     hintUsedThisStage = false;
     updateBlanksDisplay();
     updateClearingDisplay();
+    updateSCoinsDisplay();
     updateVialsDisplay();
     updateHintButton();
   }
@@ -144,6 +290,19 @@
       radius: 22,
       fromWord
     };
+  }
+
+  function ensureAllWordLettersPresent() {
+    const required = {};
+    for (const c of currentWord) required[c] = (required[c] || 0) + 1;
+    const current = {};
+    for (const l of letters) if (l.fromWord) current[l.char] = (current[l.char] || 0) + 1;
+    for (const c of currentWord) {
+      while ((current[c] || 0) < required[c]) {
+        letters.push(createLetter(c, true));
+        current[c] = (current[c] || 0) + 1;
+      }
+    }
   }
 
   function createOrb() {
@@ -179,6 +338,10 @@
     if (clearingCountEl) clearingCountEl.textContent = clearingShots;
   }
 
+  function updateSCoinsDisplay() {
+    if (scoinsCountEl) scoinsCountEl.textContent = sCoins;
+  }
+
   function updateVialsDisplay() {
     vialsEl.forEach((vial, i) => {
       vial.classList.toggle('full', i < energy);
@@ -205,10 +368,14 @@
     const correct = spelled === currentWord;
 
     if (correct) {
-      showMessage('Correct! Stage complete.', true, () => {
-        stageIndex++;
-        startStage();
-      });
+      if (currentWordInStage === 0) {
+        mothership.state = 'flying_in';
+        mothership.y = -250;
+        loadSecondWord();
+      } else {
+        mothership.state = 'exploding';
+        mothership.explodeTime = performance.now();
+      }
     } else {
       energy--;
       updateVialsDisplay();
@@ -244,6 +411,25 @@
   function update(dt) {
     const now = performance.now();
     updateWordFlash(now);
+
+    if (mothership.state === 'flying_in') {
+      mothership.y += MOTHERSHIP_SPEED * (dt / 16);
+      if (mothership.y >= MOTHERSHIP_FINAL_Y) {
+        mothership.y = MOTHERSHIP_FINAL_Y;
+        mothership.state = 'visible';
+      }
+    } else if (mothership.state === 'exploding') {
+      const elapsed = (now - mothership.explodeTime) / 1000;
+      if (elapsed >= 1.5) {
+        mothership.state = 'hidden';
+        sCoins += SCOINS_PER_STAGE;
+        updateSCoinsDisplay();
+        showMessage('Stage complete!', true, () => {
+          stageIndex++;
+          startStage();
+        });
+      }
+    }
 
     if (keys.left) ship.x = Math.max(ship.w / 2, ship.x - ship.speed);
     if (keys.right) ship.x = Math.min(width - ship.w / 2, ship.x + ship.speed);
@@ -312,8 +498,12 @@
                     gameOverScreen.classList.add('visible');
                   });
                 }
-              } else if (letter.fromWord) {
-                letters.push(createLetter(letter.char, true));
+              } else {
+                if (currentWordInStage === 1) {
+                  wrongLettersThisStage++;
+                  if (wrongLettersThisStage >= MAX_WRONG_LETTERS) triggerMothershipGameOver();
+                }
+                if (letter.fromWord) letters.push(createLetter(letter.char, true));
               }
               letters.splice(j, 1);
               lasers.splice(i, 1);
@@ -353,14 +543,18 @@
               } else {
                 energy--;
                 updateVialsDisplay();
-if (energy <= 0) {
+                if (currentWordInStage === 1) {
+                  wrongLettersThisStage++;
+                  if (wrongLettersThisStage >= MAX_WRONG_LETTERS) triggerMothershipGameOver();
+                }
+                if (energy <= 0) {
                   showMessage('Out of energy!', false, () => {
                     messageOverlay.classList.remove('visible', 'active');
                     if (gameContainer) gameContainer.classList.remove('playing');
                     gameOverScreen.classList.add('visible');
                   });
                 }
-              if (letter.fromWord) {
+                if (letter.fromWord) {
                   letters.push(createLetter(letter.char, true));
                 }
               }
@@ -390,6 +584,60 @@ if (energy <= 0) {
 
   function draw() {
     ctx.clearRect(0, 0, width, height);
+
+    if (mothership.state === 'flying_in' || mothership.state === 'visible') {
+      const mx = width / 2;
+      const mw = 280;
+      const mh = 140;
+      const barHeight = 8;
+      const barWidth = mw + 20;
+      const barY = mothership.y - barHeight - 4;
+      const labelY = barY - 14;
+      ctx.save();
+      ctx.font = 'bold 14px Orbitron, monospace';
+      ctx.fillStyle = '#cc2222';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Missed Letters: ' + wrongLettersThisStage + ' / 5', mx, labelY);
+      if (mothershipImg.complete && mothershipImg.naturalWidth) {
+        ctx.drawImage(mothershipImg, mx - mw / 2, mothership.y, mw, mh);
+      } else {
+        ctx.fillStyle = 'rgba(80, 40, 120, 0.95)';
+        ctx.strokeStyle = '#a070e0';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(mx, mothership.y + mh - 8);
+        ctx.lineTo(mx + mw / 2, mothership.y + mh);
+        ctx.lineTo(mx + mw / 2 - 10, mothership.y + mh - 6);
+        ctx.lineTo(mx, mothership.y + mh - 12);
+        ctx.lineTo(mx - mw / 2 + 10, mothership.y + mh - 6);
+        ctx.lineTo(mx - mw / 2, mothership.y + mh);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#302050';
+      ctx.fillRect(mx - barWidth / 2, barY, barWidth, barHeight);
+      ctx.fillStyle = '#cc2222';
+      ctx.fillRect(mx - barWidth / 2, barY, barWidth * (wrongLettersThisStage / MAX_WRONG_LETTERS), barHeight);
+      ctx.strokeStyle = '#882222';
+      ctx.strokeRect(mx - barWidth / 2, barY, barWidth, barHeight);
+      ctx.restore();
+    } else if (mothership.state === 'exploding') {
+      const elapsed = (performance.now() - mothership.explodeTime) / 1000;
+      const radius = Math.min(150, elapsed * 120);
+      const alpha = Math.max(0, 1 - elapsed / 1.2);
+      ctx.save();
+      ctx.fillStyle = `rgba(255, 180, 80, ${alpha * 0.8})`;
+      ctx.beginPath();
+      ctx.arc(width / 2, MOTHERSHIP_FINAL_Y + 70, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = `rgba(255, 100, 50, ${alpha * 0.5})`;
+      ctx.beginPath();
+      ctx.arc(width / 2, MOTHERSHIP_FINAL_Y + 70, radius * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
 
     for (const orb of orbs) {
       ctx.save();
@@ -423,6 +671,21 @@ if (energy <= 0) {
       ctx.restore();
     }
 
+    if (showLaserPath) {
+      const pathY = height - effectiveBottomHudHeight - ship.h - 10;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(0, 255, 100, 0.6)';
+      ctx.lineWidth = 4;
+      ctx.shadowColor = '#00ff66';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.moveTo(ship.x, pathY);
+      ctx.lineTo(ship.x, 0);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
     for (const l of lasers) {
       if (l.type === 'clearing') {
         ctx.fillStyle = '#ffaa44';
@@ -440,19 +703,25 @@ if (energy <= 0) {
     const sx = ship.x - ship.w / 2;
     const sy = height - effectiveBottomHudHeight - ship.h - 20;
     ctx.save();
-    ctx.fillStyle = '#4060a0';
-    ctx.strokeStyle = '#80a0e0';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(sx + ship.w / 2, sy);
-    ctx.lineTo(sx + ship.w, sy + ship.h);
-    ctx.lineTo(sx + ship.w / 2, sy + ship.h - 6);
-    ctx.lineTo(sx, sy + ship.h);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#00ccff';
-    ctx.fillRect(sx + ship.w / 2 - 6, sy + 4, 12, 8);
+    if (playerShipImg.complete && playerShipImg.naturalWidth) {
+      const pw = 56;
+      const ph = 48;
+      ctx.drawImage(playerShipImg, ship.x - pw / 2, sy, pw, ph);
+    } else {
+      ctx.fillStyle = '#4060a0';
+      ctx.strokeStyle = '#80a0e0';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(sx + ship.w / 2, sy);
+      ctx.lineTo(sx + ship.w, sy + ship.h);
+      ctx.lineTo(sx + ship.w / 2, sy + ship.h - 6);
+      ctx.lineTo(sx, sy + ship.h);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#00ccff';
+      ctx.fillRect(sx + ship.w / 2 - 6, sy + 4, 12, 8);
+    }
     ctx.restore();
   }
 
@@ -469,7 +738,9 @@ if (energy <= 0) {
   function startGame() {
     stageIndex = 0;
     energy = MAX_ENERGY;
+    sCoins = 0;
     gameStarted = true;
+    playerShipImg.src = getCurrentShip().img;
     shuffledWords = WORDS.slice();
     shuffleArray(shuffledWords);
     startScreen.style.display = 'none';
@@ -535,12 +806,22 @@ if (energy <= 0) {
   startBtn.addEventListener('click', startGame);
   restartBtn.addEventListener('click', restartGame);
 
+  if (shopBtn) shopBtn.addEventListener('click', openShop);
+  if (shopCloseBtn) shopCloseBtn.addEventListener('click', closeShop);
+
   if (hintBtn) {
     hintBtn.addEventListener('click', () => {
       if (!gameStarted || hintUsedThisStage) return;
       hintUsedThisStage = true;
       updateHintButton();
       showWordAgain();
+    });
+  }
+
+  if (laserPathBtn) {
+    laserPathBtn.addEventListener('click', () => {
+      showLaserPath = !showLaserPath;
+      laserPathBtn.classList.toggle('on', showLaserPath);
     });
   }
 
@@ -573,6 +854,8 @@ if (energy <= 0) {
   resize();
   updateBlanksDisplay();
   updateClearingDisplay();
+  updateSCoinsDisplay();
   updateVialsDisplay();
+  playerShipImg.src = getCurrentShip().img;
   requestAnimationFrame(loop);
 })();
