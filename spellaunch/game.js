@@ -52,6 +52,8 @@
   let lastClearShot = 0;
   const shotCooldown = 200;
   const BOTTOM_HUD_HEIGHT = 56;
+  const BOTTOM_HUD_HEIGHT_TOUCH = 190;
+  let effectiveBottomHudHeight = 56;
   let hintUsedThisStage = false;
 
   function resize() {
@@ -68,6 +70,9 @@
     if (dpr !== 1) {
       ctx.scale(dpr, dpr);
     }
+    effectiveBottomHudHeight = document.body.classList.contains('touch-device')
+      ? BOTTOM_HUD_HEIGHT_TOUCH
+      : BOTTOM_HUD_HEIGHT;
     if (gameStarted && ship.x === 0) ship.x = width / 2 - ship.w / 2;
   }
 
@@ -248,7 +253,7 @@
       keys.fire = false;
       lasers.push({
         x: ship.x,
-        y: height - BOTTOM_HUD_HEIGHT - ship.h - 10,
+        y: height - effectiveBottomHudHeight - ship.h - 10,
         vy: -14,
         type: 'normal'
       });
@@ -260,7 +265,7 @@
       updateClearingDisplay();
       lasers.push({
         x: ship.x,
-        y: height - BOTTOM_HUD_HEIGHT - ship.h - 10,
+        y: height - effectiveBottomHudHeight - ship.h - 10,
         vy: -14,
         type: 'clearing'
       });
@@ -433,7 +438,7 @@ if (energy <= 0) {
     }
 
     const sx = ship.x - ship.w / 2;
-    const sy = height - BOTTOM_HUD_HEIGHT - ship.h - 20;
+    const sy = height - effectiveBottomHudHeight - ship.h - 20;
     ctx.save();
     ctx.fillStyle = '#4060a0';
     ctx.strokeStyle = '#80a0e0';
@@ -524,7 +529,7 @@ if (energy <= 0) {
     const scaleY = canvas.height / rect.height;
     const cx = x * scaleX;
     const cy = y * scaleY;
-    if (cy > height - BOTTOM_HUD_HEIGHT - ship.h - 40) keys.fire = true;
+    if (cy > height - effectiveBottomHudHeight - ship.h - 40) keys.fire = true;
   });
 
   startBtn.addEventListener('click', startGame);

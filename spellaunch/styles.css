@@ -205,8 +205,11 @@ body {
   cursor: default;
 }
 
+/* On touch: ? on its own row above the ← → FIRE CLEAR row; ship sits above both */
 body.touch-device #hint-btn {
-  bottom: clamp(52px, 12vmin, 64px);
+  bottom: calc(clamp(44px, 10vmin, 56px) + 12vmin + 8px);
+  left: auto;
+  right: clamp(8px, 2vmin, 14px);
 }
 
 /* Overlays */
@@ -423,7 +426,7 @@ body.touch-device #start-screen .controls-instruction:not(.touch-only) {
   transform: scale(1.05);
 }
 
-/* Mobile / tablet controls - sit above the bottom HUD bar */
+/* Mobile / tablet controls - bottom row above the HUD bar (CLEAR + ENERGY) */
 #mobile-controls {
   position: absolute;
   bottom: clamp(44px, 10vmin, 56px);
@@ -437,6 +440,7 @@ body.touch-device #start-screen .controls-instruction:not(.touch-only) {
   pointer-events: none;
   z-index: 4;
 }
+
 
 #mobile-controls .mobile-move,
 #mobile-controls .mobile-fire {
