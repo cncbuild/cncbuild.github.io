@@ -163,7 +163,7 @@ body.touch-device #hud .shop-btn {
 
 /* On touch: lift bottom HUD above mobile controls so SCoins, clearing, energy are visible */
 body.touch-device #hud-bottom {
-  bottom: calc(clamp(44px, 10vmin, 56px) + 70px);
+  bottom: calc(clamp(66px, 16vmin, 88px) + 90px);
 }
 
 #hud-bottom-row1 {
@@ -454,7 +454,7 @@ body.touch-device #hud-bottom {
 
 /* On touch: ? on its own row above the ← → FIRE CLEAR row; ship sits above both */
 body.touch-device #hint-btn {
-  bottom: calc(clamp(44px, 10vmin, 56px) + 12vmin + 8px);
+  bottom: calc(100px + 12vmin + 12px);
   left: auto;
   right: clamp(8px, 2vmin, 14px);
 }
@@ -735,24 +735,23 @@ body.touch-device #start-screen .controls-instruction:not(.touch-only) {
 /* Mobile / tablet controls - bottom row above the HUD bar (CLEAR + ENERGY) */
 #mobile-controls {
   position: absolute;
-  bottom: clamp(44px, 10vmin, 56px);
+  bottom: clamp(12px, 3vmin, 20px);
   left: 0;
   right: 0;
-  padding: clamp(8px, 2vmin, 16px);
+  padding: clamp(12px, 3vmin, 24px);
   display: flex;
   align-items: stretch;
   justify-content: space-between;
-  gap: clamp(8px, 2vw, 16px);
+  gap: clamp(16px, 4vw, 28px);
   pointer-events: none;
   z-index: 4;
 }
-
 
 #mobile-controls .mobile-move,
 #mobile-controls .mobile-fire {
   display: flex;
   align-items: stretch;
-  gap: clamp(6px, 1.5vw, 12px);
+  gap: clamp(12px, 3vw, 20px);
   pointer-events: auto;
 }
 
@@ -773,12 +772,12 @@ body.touch-device #mobile-controls.hidden {
   border-radius: 12px;
   cursor: pointer;
   transition: transform 0.08s, background 0.08s, box-shadow 0.08s;
-  min-width: 44px;
-  min-height: 44px;
+  min-width: 66px;
+  min-height: 66px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(0.75rem, 2.2vmin, 0.95rem);
+  font-size: clamp(0.9rem, 2.8vmin, 1.15rem);
   font-weight: 700;
   letter-spacing: 0.05em;
   color: #fff;
@@ -794,8 +793,8 @@ body.touch-device #mobile-controls.hidden {
 
 .mobile-move-btn {
   flex: 1;
-  min-width: 56px;
-  font-size: clamp(1.25rem, 4vmin, 1.75rem);
+  min-width: 84px;
+  font-size: clamp(1.5rem, 5vmin, 2.2rem);
   line-height: 1;
 }
 

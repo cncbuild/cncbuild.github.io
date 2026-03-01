@@ -72,7 +72,7 @@
   let lastClearShot = 0;
   const shotCooldown = 200;
   const BOTTOM_HUD_HEIGHT = 56;
-  const BOTTOM_HUD_HEIGHT_TOUCH = 190;
+  const BOTTOM_HUD_HEIGHT_TOUCH = 260;
   const MOBILE_LETTER_ORB_SCALE = 0.5;
   let effectiveBottomHudHeight = 56;
   let letterOrbScale = 1;
@@ -300,14 +300,24 @@
   }
 
   function ensureAllWordLettersPresent() {
+    if (!currentWord) return;
     const required = {};
-    for (const c of currentWord) required[c] = (required[c] || 0) + 1;
+    for (let i = 0; i < currentWord.length; i++) {
+      const c = currentWord[i];
+      required[c] = (required[c] || 0) + 1;
+    }
     const current = {};
-    for (const l of letters) if (l.fromWord) current[l.char] = (current[l.char] || 0) + 1;
-    for (const c of currentWord) {
-      while ((current[c] || 0) < required[c]) {
+    for (const l of letters) {
+      if (l.fromWord) current[l.char] = (current[l.char] || 0) + 1;
+    }
+    let totalAdded = 0;
+    const maxAdd = currentWord.length;
+    for (const c of Object.keys(required)) {
+      if (totalAdded >= maxAdd) break;
+      const need = Math.max(0, Math.min(required[c] - (current[c] || 0), maxAdd - totalAdded));
+      for (let i = 0; i < need; i++) {
         letters.push(createLetter(c, true));
-        current[c] = (current[c] || 0) + 1;
+        totalAdded++;
       }
     }
   }
@@ -810,6 +820,7 @@
 
   canvas.addEventListener('click', (e) => {
     if (!gameStarted) return;
+    if (document.body.classList.contains('touch-device')) return;
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
