@@ -1,1 +1,73 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spellaunch | Spell the Word With a Lasership!</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="game-container">
+    <div id="hud">
+      <div id="blanks-container">
+        <span id="blanks"></span>
+      </div>
+    </div>
+    <div id="hud-bottom">
+      <div id="clearing-container">
+        <span class="clearing-label">CLEAR</span>
+        <span id="clearing-count">7</span>
+      </div>
+      <div id="energy-container">
+        <span class="vial-label">ENERGY</span>
+        <div id="vials">
+          <div class="vial full" data-vial="0"></div>
+          <div class="vial full" data-vial="1"></div>
+          <div class="vial full" data-vial="2"></div>
+          <div class="vial full" data-vial="3"></div>
+          <div class="vial full" data-vial="4"></div>
+          <div class="vial full" data-vial="5"></div>
+          <div class="vial full" data-vial="6"></div>
+          <div class="vial full" data-vial="7"></div>
+          <div class="vial full" data-vial="8"></div>
+          <div class="vial full" data-vial="9"></div>
+        </div>
+      </div>
+    </div>
+    <button type="button" id="hint-btn" class="hint-btn" aria-label="Show word again" title="Show word again (once per stage)">?</button>
+    <canvas id="game-canvas"></canvas>
+    <div id="overlay">
+      <div id="word-flash"></div>
+      <div id="message-overlay">
+        <p id="message-text"></p>
+        <button id="message-btn">Continue</button>
+      </div>
+      <div id="start-screen">
+        <h1>SPELLAUNCH</h1>
+        <p class="controls-instruction">Shoot the letters in order to spell the word.<br>Use <kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> to move. <kbd>Space</kbd> or click to fire. <kbd>Shift</kbd> fires a Clearing Laser (7 per stage).</p>
+<p class="controls-instruction touch-only">On mobile or tablet, use the on-screen buttons to move and fire.</p>
+        <button id="start-btn">Launch</button>
+      </div>
+      <div id="game-over-screen">
+        <h2>GAME OVER</h2>
+        <p>No energy remaining.</p>
+        <button id="restart-btn">Try Again</button>
+      </div>
+    </div>
+    <div id="mobile-controls" class="hidden">
+      <div class="mobile-move">
+        <button type="button" id="btn-left" class="mobile-btn mobile-move-btn" aria-label="Move left"><span aria-hidden="true">←</span></button>
+        <button type="button" id="btn-right" class="mobile-btn mobile-move-btn" aria-label="Move right"><span aria-hidden="true">→</span></button>
+      </div>
+      <div class="mobile-fire">
+        <button type="button" id="btn-fire" class="mobile-btn mobile-fire-btn" aria-label="Fire laser">FIRE</button>
+        <button type="button" id="btn-clear" class="mobile-btn mobile-clear-btn" aria-label="Clearing laser">CLEAR</button>
+      </div>
+    </div>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
