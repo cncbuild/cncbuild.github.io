@@ -316,7 +316,10 @@
       if (totalAdded >= maxAdd) break;
       const need = Math.max(0, Math.min(required[c] - (current[c] || 0), maxAdd - totalAdded));
       for (let i = 0; i < need; i++) {
-        letters.push(createLetter(c, true));
+        const letter = createLetter(c, true);
+        if (typeof letter.vx !== 'number') letter.vx = (Math.random() - 0.5) * 1.2;
+        if (typeof letter.vy !== 'number') letter.vy = (Math.random() - 0.5) * 0.9;
+        letters.push(letter);
         totalAdded++;
       }
     }
@@ -422,6 +425,8 @@
     } else if (wordFlashPhase === 'fading' && elapsed >= 4) {
       wordFlashEl.classList.remove('fading');
       wordFlashPhase = 'done';
+      ensureAllWordLettersPresent();
+      shuffleArray(letters);
     }
   }
 
