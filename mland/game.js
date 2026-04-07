@@ -140,7 +140,7 @@ const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 
 function getBaseNumber() {
-  return gameState.mode === 5 ? 5 : 6;
+  return gameState.mode;
 }
 
 function generateProblem() {
@@ -164,6 +164,16 @@ function generateWrongAnswers(correct) {
   if (gameState.mode === 6) {
     let pool = [6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72].filter(m => m !== correct);
     if (correct !== 6) pool = pool.filter(m => m !== 6);
+    while (wrong.size < 3 && pool.length > 0) {
+      const idx = Math.floor(Math.random() * pool.length);
+      wrong.add(pool[idx]);
+      pool.splice(idx, 1);
+    }
+    return [...wrong];
+  }
+  if (gameState.mode === 7) {
+    let pool = [7, 14, 21, 28, 35, 42, 49, 56, 63, 70, 77, 84].filter(m => m !== correct);
+    if (correct !== 7) pool = pool.filter(m => m !== 7);
     while (wrong.size < 3 && pool.length > 0) {
       const idx = Math.floor(Math.random() * pool.length);
       wrong.add(pool[idx]);
@@ -738,6 +748,7 @@ document.getElementById('char-boy').onclick = () => setCharacter('boy');
 document.getElementById('char-girl').onclick = () => setCharacter('girl');
 document.getElementById('mode-5').onclick = () => startGame(5);
 document.getElementById('mode-6').onclick = () => startGame(6);
+document.getElementById('mode-7').onclick = () => startGame(7);
 
 const isTouchDevice = 'ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
 if (isTouchDevice) {
