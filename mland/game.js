@@ -8,9 +8,17 @@ const MONSTERS = [
   { id: 4, name: 'Leafelegs', baseHp: 15, imagePath: 'assets/monsters/Leafelegs.png' },
   { id: 5, name: 'Shork', baseHp: 15, imagePath: 'assets/monsters/Shork.png' },
   { id: 6, name: 'Canonine', baseHp: 15, imagePath: 'assets/monsters/Canonine.png' },
+  { id: 7, name: 'Golden Sohn', baseHp: 50, imagePath: 'assets/monsters/Golden-Sohn.png' },
+  { id: 8, name: 'Shadeek', baseHp: 50, imagePath: 'assets/monsters/Shadeek.png' },
+  { id: 9, name: 'Super Arfish', baseHp: 50, imagePath: 'assets/monsters/Super-Arfish.png' },
+  { id: 10, name: 'Dynost', baseHp: 50, imagePath: 'assets/monsters/Dynost.png' },
 ];
 
 const MONSTER_COUNT = MONSTERS.length;
+const ORIGINAL_MONSTER_COUNT = 7;
+const GOLDEN_SOHN_ID = 7;
+/** Shadeek, Super Arfish, Dynost — must be caught before Golden Sohn can appear */
+const MEGA_MONSTERS_BEFORE_GOLDEN_IDS = [8, 9, 10];
 
 const monsterImages = {};
 MONSTERS.forEach(m => {
@@ -112,6 +120,8 @@ let gameState = {
   playerHealth: PLAYER_MAX_HEALTH,
   playerMaxHealth: PLAYER_MAX_HEALTH,
   caughtMonsters: [],
+  megaTeamActive: false,
+  megaLeagueMusicActive: false,
   playerX: 10,
   playerY: 10,
   steps: 0,
@@ -129,8 +139,107 @@ const screens = {
   encounter: document.getElementById('battle-encounter-screen'),
   battle: document.getElementById('battle-screen'),
   levelUp: document.getElementById('level-up-screen'),
+  alexMegaTeam: document.getElementById('alex-mega-team-screen'),
   gameOver: document.getElementById('game-over-screen'),
 };
+
+const themeMusic = document.getElementById('theme-music');
+const battleMusic = document.getElementById('battle-music');
+const megaLeagueMusic = document.getElementById('mega-league-music');
+
+function setAllMusicMuted(muted) {
+  [themeMusic, battleMusic, megaLeagueMusic].forEach(a => {
+    if (a) a.muted = muted;
+  });
+}
+
+function syncMusicMuteButtons() {
+  const muted = themeMusic?.muted ?? false;
+  document.querySelectorAll('.music-mute-btn').forEach(btn => {
+    btn.textContent = muted ? 'Unmute' : 'Mute';
+    btn.setAttribute('aria-label', muted ? 'Unmute music' : 'Mute music');
+    btn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+  });
+}
+
+function toggleThemeMute() {
+  if (!themeMusic && !battleMusic && !megaLeagueMusic) return;
+  const muted = !(themeMusic?.muted ?? false);
+  setAllMusicMuted(muted);
+  syncMusicMuteButtons();
+}
+
+function startThemeMusic() {
+  if (battleMusic) {
+    battleMusic.pause();
+    battleMusic.currentTime = 0;
+  }
+  if (megaLeagueMusic) {
+    megaLeagueMusic.pause();
+    megaLeagueMusic.currentTime = 0;
+  }
+  if (!themeMusic) return;
+  themeMusic.loop = true;
+  themeMusic.currentTime = 0;
+  themeMusic.play().catch(() => {});
+}
+
+function playBattleMusic() {
+  if (themeMusic) themeMusic.pause();
+  if (megaLeagueMusic) megaLeagueMusic.pause();
+  if (!battleMusic) return;
+  battleMusic.loop = true;
+  battleMusic.currentTime = 0;
+  battleMusic.play().catch(() => {});
+}
+
+function playNonBattleMusic() {
+  if (battleMusic) {
+    battleMusic.pause();
+    battleMusic.currentTime = 0;
+  }
+  if (gameState.megaLeagueMusicActive) {
+    if (themeMusic) themeMusic.pause();
+    if (megaLeagueMusic) {
+      megaLeagueMusic.loop = true;
+      megaLeagueMusic.play().catch(() => {});
+    }
+  } else {
+    if (megaLeagueMusic) {
+      megaLeagueMusic.pause();
+      megaLeagueMusic.currentTime = 0;
+    }
+    if (themeMusic) {
+      themeMusic.loop = true;
+      themeMusic.play().catch(() => {});
+    }
+  }
+}
+
+function beginMegaLeagueMusic() {
+  gameState.megaLeagueMusicActive = true;
+  if (themeMusic) {
+    themeMusic.pause();
+    themeMusic.currentTime = 0;
+  }
+  if (battleMusic) {
+    battleMusic.pause();
+    battleMusic.currentTime = 0;
+  }
+  if (!megaLeagueMusic) return;
+  megaLeagueMusic.loop = true;
+  megaLeagueMusic.currentTime = 0;
+  megaLeagueMusic.play().catch(() => {});
+}
+
+function pauseAllMusic() {
+  [themeMusic, battleMusic, megaLeagueMusic].forEach(a => {
+    if (a) {
+      a.pause();
+      a.currentTime = 0;
+    }
+  });
+}
 
 const LEVEL_UP_DURATION = 3000;
 const ATTACK_EFFECT_DURATION = 2000;
@@ -189,10 +298,32 @@ function generateWrongAnswers(correct) {
   return [...wrong];
 }
 
+function hasCaughtAllOriginals() {
+  for (let id = 0; id < ORIGINAL_MONSTER_COUNT; id++) {
+    if (!gameState.caughtMonsters.includes(id)) return false;
+  }
+  return true;
+}
+
 function getRandomUncaughtMonster() {
-  const uncaught = MONSTERS.filter(m => !gameState.caughtMonsters.includes(m.id));
-  if (uncaught.length === 0) return null;
-  return uncaught[Math.floor(Math.random() * uncaught.length)];
+  let pool = MONSTERS.filter(m => !gameState.caughtMonsters.includes(m.id));
+  if (pool.length === 0) return null;
+  if (!gameState.megaTeamActive) {
+    pool = pool.filter(m => m.id < ORIGINAL_MONSTER_COUNT);
+  } else {
+    pool = pool.filter(m => m.id >= ORIGINAL_MONSTER_COUNT);
+    const allOtherMegaCaught = MEGA_MONSTERS_BEFORE_GOLDEN_IDS.every(id =>
+      gameState.caughtMonsters.includes(id)
+    );
+    const goldenCaught = gameState.caughtMonsters.includes(GOLDEN_SOHN_ID);
+    if (!allOtherMegaCaught) {
+      pool = pool.filter(m => MEGA_MONSTERS_BEFORE_GOLDEN_IDS.includes(m.id));
+    } else if (!goldenCaught) {
+      pool = pool.filter(m => m.id === GOLDEN_SOHN_ID);
+    }
+  }
+  if (pool.length === 0) return null;
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 function startGame(mode) {
@@ -205,6 +336,8 @@ function startGame(mode) {
     playerHealth: PLAYER_MAX_HEALTH,
     playerMaxHealth: PLAYER_MAX_HEALTH,
     caughtMonsters: [],
+    megaTeamActive: false,
+    megaLeagueMusicActive: false,
     playerX: 10,
     playerY: 10,
     steps: 0,
@@ -216,21 +349,32 @@ function startGame(mode) {
     inBattle: false,
   };
   screens.start.classList.add('hidden');
+  startThemeMusic();
   screens.overworld.classList.remove('hidden');
   screens.encounter.classList.add('hidden');
   screens.battle.classList.add('hidden');
   screens.levelUp.classList.add('hidden');
+  if (screens.alexMegaTeam) screens.alexMegaTeam.classList.add('hidden');
   screens.gameOver.classList.add('hidden');
   updateHUD();
   drawOverworld();
   document.addEventListener('keydown', handleOverworldKey);
 }
 
+function getInventoryMonsters() {
+  if (!gameState.megaTeamActive) {
+    return MONSTERS.filter(m => m.id < ORIGINAL_MONSTER_COUNT);
+  }
+  return MONSTERS;
+}
+
 function updateHUD() {
   document.getElementById('player-level').textContent = gameState.playerLevel;
-  document.getElementById('monsters-caught').textContent = gameState.caughtMonsters.length;
+  const inv = getInventoryMonsters();
+  const caughtShown = gameState.caughtMonsters.filter(id => inv.some(m => m.id === id)).length;
+  document.getElementById('monsters-caught').textContent = caughtShown;
   const totalEl = document.getElementById('monsters-total');
-  if (totalEl) totalEl.textContent = MONSTER_COUNT;
+  if (totalEl) totalEl.textContent = inv.length;
   updatePlayerHealthDisplay();
   updateMonsterInventory();
 }
@@ -249,7 +393,7 @@ function updatePlayerHealthDisplay() {
 function fillMonsterInventorySlots(container) {
   if (!container) return;
   container.innerHTML = '';
-  MONSTERS.forEach(m => {
+  getInventoryMonsters().forEach(m => {
     const caught = gameState.caughtMonsters.includes(m.id);
     const slot = document.createElement('div');
     slot.className = 'inventory-slot' + (caught ? ' caught' : '');
@@ -379,6 +523,7 @@ function startBattle() {
     screens.encounter.classList.add('hidden');
     screens.overworld.classList.add('hidden');
     screens.battle.classList.remove('hidden');
+    playBattleMusic();
     renderBattle();
   }, BATTLE_ANIMATION_DURATION);
 }
@@ -388,6 +533,25 @@ function updateAttackMeterDisplay() {
   document.getElementById('attack-meter-bar').style.width = `${pct}%`;
   document.getElementById('attack-meter-text').textContent =
     `${gameState.attackMeter}/${ATTACK_METER_MAX}`;
+}
+
+function detachEnterNextProblemListener() {
+  document.removeEventListener('keydown', handleEnterNextProblem, true);
+}
+
+function handleEnterNextProblem(e) {
+  if (e.key !== 'Enter') return;
+  const b = gameState.currentBattle;
+  if (!b || !b.waitingForAttackChoice) return;
+  if (gameState.attackMeter >= ATTACK_METER_MAX) return;
+  e.preventDefault();
+  e.stopPropagation();
+  goToNextProblem();
+}
+
+function attachEnterNextProblemListener() {
+  detachEnterNextProblemListener();
+  document.addEventListener('keydown', handleEnterNextProblem, true);
 }
 
 function renderAttackButtons() {
@@ -407,6 +571,9 @@ function renderAttackButtons() {
   panel.classList.toggle('hidden', !gameState.currentBattle.waitingForAttackChoice);
   const nextBtn = document.getElementById('next-problem-btn');
   if (nextBtn) nextBtn.disabled = gameState.attackMeter >= ATTACK_METER_MAX;
+  if (gameState.currentBattle.waitingForAttackChoice) {
+    attachEnterNextProblemListener();
+  }
 }
 
 function renderBattle() {
@@ -443,6 +610,7 @@ function renderBattle() {
   document.getElementById('feedback-text').textContent = '';
   document.getElementById('feedback-text').className = 'feedback';
   document.getElementById('attack-buttons-panel').classList.add('hidden');
+  detachEnterNextProblemListener();
 }
 
 function handleAnswerSubmit(e) {
@@ -569,6 +737,7 @@ function handleAttack(attackId) {
   const attack = ATTACKS.find(a => a.id === attackId);
   if (!attack || gameState.attackMeter < attack.cost || gameState.playerLevel < attack.minLevel) return;
 
+  detachEnterNextProblemListener();
   gameState.attackMeter -= attack.cost;
   b.currentHp = Math.max(0, b.currentHp - attack.damage);
   b.waitingForAttackChoice = false;
@@ -604,6 +773,7 @@ function goToNextProblem() {
   const b = gameState.currentBattle;
   if (!b || !b.waitingForAttackChoice) return;
   if (gameState.attackMeter >= ATTACK_METER_MAX) return;
+  detachEnterNextProblemListener();
   document.getElementById('next-problem-btn').removeEventListener('click', goToNextProblem);
   b.waitingForAttackChoice = false;
   document.getElementById('attack-buttons-panel').classList.add('hidden');
@@ -670,11 +840,26 @@ function catchMonster() {
 
   screens.battle.classList.add('hidden');
   gameState.inBattle = false;
+  playNonBattleMusic();
 
   const newLevel = gameState.playerLevel;
 
   showLevelUp(b.monster, newLevel, () => {
-    if (gameState.caughtMonsters.length >= MONSTER_COUNT) {
+    if (hasCaughtAllOriginals() && !gameState.megaTeamActive) {
+      showAlexMegaTeamOverlay(ALEX_MEGA_TEAM_SENTENCES, () => {
+        gameState.megaTeamActive = true;
+        gameState.stepsUntilEncounter = rollNextEncounter();
+        screens.overworld.classList.remove('hidden');
+        updateHUD();
+        drawOverworld();
+        document.addEventListener('keydown', handleOverworldKey);
+      });
+    } else if (
+      b.monster.id === GOLDEN_SOHN_ID &&
+      gameState.caughtMonsters.length >= MONSTER_COUNT
+    ) {
+      showAlexMegaTeamOverlay(ALEX_GOLDEN_SOHN_ENDING_SENTENCES, () => showGameOver(true));
+    } else if (gameState.caughtMonsters.length >= MONSTER_COUNT) {
       showGameOver(true);
     } else {
       gameState.stepsUntilEncounter = rollNextEncounter();
@@ -690,7 +875,104 @@ function gameOver(won) {
   screens.battle.classList.add('hidden');
   screens.encounter.classList.add('hidden');
   gameState.inBattle = false;
+  playNonBattleMusic();
   showGameOver(won);
+}
+
+const ALEX_MEGA_TEAM_SENTENCES = [
+  'Hello, welcome to the Mega Team.',
+  'Here you will use your monsters to fight Mega Monsters and catch them.',
+  'But, somehow, a really strange monster called the Golden Sohn has appeared!',
+  'Let\'s see if you can catch him!',
+];
+
+const ALEX_GOLDEN_SOHN_ENDING_SENTENCES = [
+  'Wow, you caught the Golden Sohn!',
+  'I thought that was impossible!',
+  'Congratulations and well done!',
+];
+
+let alexMegaTeamCleanup = null;
+
+function showAlexMegaTeamOverlay(sentences, onComplete) {
+  if (alexMegaTeamCleanup) {
+    alexMegaTeamCleanup();
+    alexMegaTeamCleanup = null;
+  }
+
+  const msgEl = document.getElementById('alex-mega-team-message');
+  const hintEl = document.getElementById('alex-mega-team-hint');
+  const goBtn = document.getElementById('alex-mega-team-go-btn');
+  const contentEl = document.querySelector('.alex-mega-team-content');
+  if (!msgEl || !screens.alexMegaTeam || !sentences || sentences.length === 0) {
+    onComplete();
+    return;
+  }
+
+  if (sentences === ALEX_MEGA_TEAM_SENTENCES) {
+    beginMegaLeagueMusic();
+  }
+
+  let index = 0;
+  const lastIndex = sentences.length - 1;
+
+  function render() {
+    msgEl.textContent = sentences[index];
+    const onLast = index >= lastIndex;
+    if (hintEl) {
+      hintEl.classList.toggle('hidden', onLast);
+    }
+    if (goBtn) {
+      goBtn.classList.toggle('hidden', !onLast);
+    }
+  }
+
+  function finish() {
+    if (alexMegaTeamCleanup) {
+      alexMegaTeamCleanup();
+      alexMegaTeamCleanup = null;
+    }
+    screens.alexMegaTeam.classList.add('hidden');
+    onComplete();
+  }
+
+  function advance() {
+    if (index < lastIndex) {
+      index++;
+      render();
+    } else {
+      finish();
+    }
+  }
+
+  function onKeyDown(e) {
+    if (e.repeat) return;
+    e.preventDefault();
+    advance();
+  }
+
+  function onContentClick(e) {
+    if (goBtn && !goBtn.classList.contains('hidden') && e.target === goBtn) return;
+    advance();
+  }
+
+  function onGoClick(e) {
+    e.stopPropagation();
+    advance();
+  }
+
+  window.addEventListener('keydown', onKeyDown, true);
+  if (contentEl) contentEl.addEventListener('click', onContentClick);
+  if (goBtn) goBtn.addEventListener('click', onGoClick);
+
+  alexMegaTeamCleanup = () => {
+    window.removeEventListener('keydown', onKeyDown, true);
+    if (contentEl) contentEl.removeEventListener('click', onContentClick);
+    if (goBtn) goBtn.removeEventListener('click', onGoClick);
+  };
+
+  render();
+  screens.alexMegaTeam.classList.remove('hidden');
 }
 
 function showGameOver(won) {
@@ -702,7 +984,7 @@ function showGameOver(won) {
     ? "🎉 You've Caught Them All! 🎉"
     : "💔 Game Over 💔";
   document.getElementById('game-over-msg').textContent = won
-    ? "Congratulations! You collected all 5 monsters from Multiplication Land!"
+    ? `Congratulations! You collected all ${MONSTER_COUNT} monsters from Multiplication Land!`
     : "You ran out of health! Keep practicing your multiplication to catch them all next time.";
   document.getElementById('problems-stats').textContent = gameState.problemsCorrect;
   document.getElementById('problems-total').textContent = gameState.problemsTotal;
@@ -723,6 +1005,7 @@ function showGameOver(won) {
   });
 
   document.getElementById('play-again-btn').onclick = () => {
+    pauseAllMusic();
     screens.gameOver.classList.add('hidden');
     screens.start.classList.remove('hidden');
   };
@@ -743,6 +1026,14 @@ function setCharacter(character) {
     boyBtn.setAttribute('aria-pressed', 'false');
   }
 }
+
+document.getElementById('game-container').addEventListener('click', e => {
+  if (e.target.closest('.music-mute-btn')) {
+    e.preventDefault();
+    toggleThemeMute();
+  }
+});
+syncMusicMuteButtons();
 
 document.getElementById('char-boy').onclick = () => setCharacter('boy');
 document.getElementById('char-girl').onclick = () => setCharacter('girl');

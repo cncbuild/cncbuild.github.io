@@ -8,6 +8,9 @@
 </head>
 <body>
   <div id="game-container">
+    <audio id="theme-music" src="assets/sounds/theme.wav" loop preload="auto"></audio>
+    <audio id="battle-music" src="assets/sounds/battle.wav" loop preload="auto"></audio>
+    <audio id="mega-league-music" src="assets/sounds/mega-league.wav" loop preload="auto"></audio>
     <!-- Start Screen -->
     <div id="start-screen">
       <h1 class="game-title">Multiplication Land</h1>
@@ -44,15 +47,18 @@
     <!-- Overworld Screen -->
     <div id="overworld-screen" class="hidden">
       <div class="hud">
-        <div class="hud-stat">Level <span id="player-level">1</span></div>
-        <div class="hud-stat">Monsters: <span id="monsters-caught">0</span>/<span id="monsters-total">7</span></div>
-        <div class="hud-stat hud-health">
-          <span>HP</span>
-          <div class="player-health-bar-container">
-            <div id="player-health-bar" class="player-health-bar"></div>
+        <div class="hud-inner">
+          <div class="hud-stat">Level <span id="player-level">1</span></div>
+          <div class="hud-stat">Monsters: <span id="monsters-caught">0</span>/<span id="monsters-total">7</span></div>
+          <div class="hud-stat hud-health">
+            <span>HP</span>
+            <div class="player-health-bar-container">
+              <div id="player-health-bar" class="player-health-bar"></div>
+            </div>
+            <span id="player-health-text">25/25</span>
           </div>
-          <span id="player-health-text">25/25</span>
         </div>
+        <button type="button" class="music-mute-btn" aria-pressed="false" aria-label="Mute music">Mute</button>
       </div>
       <canvas id="game-canvas" width="640" height="480"></canvas>
       <div id="monster-inventory">
@@ -80,6 +86,9 @@
 
     <!-- Battle Screen -->
     <div id="battle-screen" class="hidden">
+      <div class="battle-hud-bar">
+        <button type="button" class="music-mute-btn" aria-pressed="false" aria-label="Mute music">Mute</button>
+      </div>
       <div class="battle-layout">
         <div class="monster-side">
           <div class="monster-sprite-wrap">
@@ -156,6 +165,17 @@
         <p class="level-up-level">Level <span id="level-up-new-level">2</span></p>
         <p id="level-up-new-move" class="level-up-new-move hidden"></p>
         <button type="button" id="level-up-continue-btn" class="level-up-continue-btn">Continue</button>
+      </div>
+    </div>
+
+    <!-- Alex / Mega Team intro (after catching all original monsters) -->
+    <div id="alex-mega-team-screen" class="hidden">
+      <div class="alex-mega-team-content">
+        <h2 class="alex-mega-team-title">Mega Team</h2>
+        <img id="alex-portrait" class="alex-portrait" src="assets/alex.png" alt="Alex" width="200" height="200" />
+        <p id="alex-mega-team-message" class="alex-mega-team-message"></p>
+        <p id="alex-mega-team-hint" class="alex-mega-team-hint hidden">Click or press any key to continue</p>
+        <button type="button" id="alex-mega-team-go-btn" class="alex-mega-go-btn hidden">Go For It</button>
       </div>
     </div>
 
