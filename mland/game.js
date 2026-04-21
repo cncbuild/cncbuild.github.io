@@ -55,6 +55,7 @@ const ENCOUNTER_MIN_STEPS = 5;
 const ENCOUNTER_MAX_STEPS = 12;
 const PLAYER_MAX_HEALTH = 25;
 const WRONG_ANSWER_DAMAGE = 5;
+const HEAL_AFTER_CATCH = 10;
 const ATTACK_METER_MAX = 60;
 const METER_PER_CORRECT = 5;
 
@@ -283,6 +284,16 @@ function generateWrongAnswers(correct) {
   if (gameState.mode === 7) {
     let pool = [7, 14, 21, 28, 35, 42, 49, 56, 63, 70, 77, 84].filter(m => m !== correct);
     if (correct !== 7) pool = pool.filter(m => m !== 7);
+    while (wrong.size < 3 && pool.length > 0) {
+      const idx = Math.floor(Math.random() * pool.length);
+      wrong.add(pool[idx]);
+      pool.splice(idx, 1);
+    }
+    return [...wrong];
+  }
+  if (gameState.mode === 8) {
+    let pool = [8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96].filter(m => m !== correct);
+    if (correct !== 8) pool = pool.filter(m => m !== 8);
     while (wrong.size < 3 && pool.length > 0) {
       const idx = Math.floor(Math.random() * pool.length);
       wrong.add(pool[idx]);
@@ -801,9 +812,20 @@ function runConfetti() {
   }
 }
 
-function showLevelUp(monster, newLevel, onComplete) {
+function showLevelUp(monster, newLevel, healAmount, onComplete) {
   document.getElementById('level-up-new-level').textContent = newLevel;
   document.getElementById('level-up-monster-name').textContent = monster.name;
+  const healTextEl = document.getElementById('level-up-heal-text');
+  if (healTextEl) healTextEl.textContent = `Healed +${healAmount} HP!`;
+  const levelUpHealthBar = document.getElementById('level-up-health-bar');
+  const levelUpHealthText = document.getElementById('level-up-health-text');
+  if (levelUpHealthBar) {
+    const hpPct = (gameState.playerHealth / gameState.playerMaxHealth) * 100;
+    levelUpHealthBar.style.width = `${hpPct}%`;
+  }
+  if (levelUpHealthText) {
+    levelUpHealthText.textContent = `${gameState.playerHealth}/${gameState.playerMaxHealth}`;
+  }
 
   const canvas = document.getElementById('level-up-monster-canvas');
   if (canvas) {
@@ -835,8 +857,12 @@ function showLevelUp(monster, newLevel, onComplete) {
 function catchMonster() {
   const b = gameState.currentBattle;
   gameState.caughtMonsters.push(b.monster.id);
+  const beforeHeal = gameState.playerHealth;
+  gameState.playerHealth = Math.min(gameState.playerMaxHealth, gameState.playerHealth + HEAL_AFTER_CATCH);
+  const healed = gameState.playerHealth - beforeHeal;
   gameState.playerLevel++;
   gameState.playerAttack = 4 + gameState.playerLevel;
+  updatePlayerHealthDisplay();
 
   screens.battle.classList.add('hidden');
   gameState.inBattle = false;
@@ -844,7 +870,7 @@ function catchMonster() {
 
   const newLevel = gameState.playerLevel;
 
-  showLevelUp(b.monster, newLevel, () => {
+  showLevelUp(b.monster, newLevel, healed, () => {
     if (hasCaughtAllOriginals() && !gameState.megaTeamActive) {
       showAlexMegaTeamOverlay(ALEX_MEGA_TEAM_SENTENCES, () => {
         gameState.megaTeamActive = true;
@@ -1040,6 +1066,7 @@ document.getElementById('char-girl').onclick = () => setCharacter('girl');
 document.getElementById('mode-5').onclick = () => startGame(5);
 document.getElementById('mode-6').onclick = () => startGame(6);
 document.getElementById('mode-7').onclick = () => startGame(7);
+document.getElementById('mode-8').onclick = () => startGame(8);
 
 const isTouchDevice = 'ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
 if (isTouchDevice) {

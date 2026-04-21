@@ -7,6 +7,8 @@ An RPG-style math game where you walk around a field, encounter cute monsters, a
 1. **Choose your mode** on the start screen:
    - **Multiply By 5's** — Practice 1×5 through 12×5
    - **Multiply By 6's** — Practice 1×6 through 12×6
+   - **Multiply By 7's** — Practice 1×7 through 12×7
+   - **Multiply By 8's** — Practice 1×8 through 12×8
 
 2. **Explore the field** using Arrow Keys or WASD.
 

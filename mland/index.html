@@ -41,6 +41,10 @@
           <span class="mode-icon">✖7</span>
           <span class="mode-label">Multiply By 7's</span>
         </button>
+        <button id="mode-8" class="mode-btn">
+          <span class="mode-icon">✖8</span>
+          <span class="mode-label">Multiply By 8's</span>
+        </button>
       </div>
     </div>
 
@@ -161,6 +165,13 @@
         <div class="level-up-monster">
           <canvas id="level-up-monster-canvas" width="96" height="96" aria-hidden="true"></canvas>
           <p id="level-up-monster-name" class="level-up-monster-name"></p>
+        </div>
+        <p id="level-up-heal-text" class="level-up-heal-text"></p>
+        <div class="level-up-health-wrap" aria-label="Current health after healing">
+          <div class="player-health-bar-container level-up-health">
+            <div id="level-up-health-bar" class="player-health-bar"></div>
+          </div>
+          <span id="level-up-health-text" class="level-up-health-text">25/25</span>
         </div>
         <p class="level-up-level">Level <span id="level-up-new-level">2</span></p>
         <p id="level-up-new-move" class="level-up-new-move hidden"></p>
