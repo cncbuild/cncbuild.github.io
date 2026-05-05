@@ -301,6 +301,16 @@ function generateWrongAnswers(correct) {
     }
     return [...wrong];
   }
+  if (gameState.mode === 9) {
+    let pool = [9, 18, 27, 36, 45, 54, 63, 72, 81, 90, 99, 108].filter(m => m !== correct);
+    if (correct !== 9) pool = pool.filter(m => m !== 9);
+    while (wrong.size < 3 && pool.length > 0) {
+      const idx = Math.floor(Math.random() * pool.length);
+      wrong.add(pool[idx]);
+      pool.splice(idx, 1);
+    }
+    return [...wrong];
+  }
   while (wrong.size < 3) {
     const offset = (Math.floor(Math.random() * 7) - 3) * (Math.random() > 0.5 ? 1 : -1);
     const val = correct + offset;
@@ -1067,6 +1077,7 @@ document.getElementById('mode-5').onclick = () => startGame(5);
 document.getElementById('mode-6').onclick = () => startGame(6);
 document.getElementById('mode-7').onclick = () => startGame(7);
 document.getElementById('mode-8').onclick = () => startGame(8);
+document.getElementById('mode-9').onclick = () => startGame(9);
 
 const isTouchDevice = 'ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
 if (isTouchDevice) {
