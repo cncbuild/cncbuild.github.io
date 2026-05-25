@@ -53,6 +53,15 @@
           <span class="mode-icon">✖11</span>
           <span class="mode-label">Multiply By 11's</span>
         </button>
+        <button id="mode-12" class="mode-btn">
+          <span class="mode-icon">✖12</span>
+          <span class="mode-label">Multiply By 12's</span>
+        </button>
+        <button id="mode-all" class="mode-btn">
+          <span class="mode-icon">✖×</span>
+          <span class="mode-label">All Multiplication Facts</span>
+          <span class="mode-sublabel">2–10 × 2–12</span>
+        </button>
       </div>
     </div>
 
@@ -123,12 +132,18 @@
           <div class="math-problem">
             <p id="problem-text">5 × 6 = ?</p>
             <div class="answer-options" id="answer-options">
-              <form id="answer-form" class="answer-form">
+              <p id="answer-mode-hint" class="answer-mode-hint hidden" aria-live="polite"></p>
+              <div id="answer-choice-panel" class="answer-choice-panel hidden"></div>
+              <form id="answer-form" class="answer-form hidden">
                 <input type="number" id="answer-input" class="answer-input" min="1" inputmode="numeric" aria-label="Type your answer" />
                 <button type="submit" id="answer-submit-btn" class="answer-btn answer-submit-btn">Submit</button>
               </form>
             </div>
             <p id="feedback-text" class="feedback"></p>
+            <div id="wrong-answer-reveal" class="wrong-answer-reveal hidden" role="alert" aria-live="assertive">
+              <p class="wrong-answer-reveal-label">Correct answer</p>
+              <p id="wrong-answer-reveal-equation" class="wrong-answer-reveal-equation"></p>
+            </div>
           </div>
           <div class="player-stats">
             <div class="attack-meter-row">

@@ -55,6 +55,7 @@ const ENCOUNTER_MIN_STEPS = 5;
 const ENCOUNTER_MAX_STEPS = 12;
 const PLAYER_MAX_HEALTH = 25;
 const WRONG_ANSWER_DAMAGE = 5;
+const WRONG_ANSWER_REVEAL_MS = 3200;
 const HEAL_AFTER_CATCH = 10;
 const ATTACK_METER_MAX = 60;
 const METER_PER_CORRECT = 5;
@@ -249,20 +250,257 @@ const CONFETTI_COLORS = ['#f4d03f', '#f8b4d9', '#98eec9', '#e74c3c', '#3498db', 
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+const ACCURACY_WINDOW = 15;
+const ACCURACY_MIN_ANSWERS = 8;
+const ACCURACY_WIDEN_THRESHOLD = 0.85;
+const ACCURACY_NARROW_THRESHOLD = 0.6;
+const WEAK_FACT_REVIEW_CHANCE = 0.35;
+const WEAK_FACT_CHOICE_UNLOCK_STREAK = 2;
+const ANSWER_MODE_PROMOTE_CORRECT = 8;
+const ANSWER_MODE_DEMOTE_WRONG = 4;
+
+const FACT_CAP_TIERS = [
+  { maxMultiplier: 5, maxLowFactor: 5, maxHighFactor: 5 },
+  { maxMultiplier: 8, maxLowFactor: 8, maxHighFactor: 8 },
+  { maxMultiplier: 12, maxLowFactor: 10, maxHighFactor: 12 },
+];
+
+function getLevelCapTierIndex(level) {
+  if (level <= 2) return 0;
+  if (level <= 4) return 1;
+  return 2;
+}
+
+function getRecentAccuracy() {
+  const recent = gameState.recentAnswers;
+  if (!recent || recent.length < ACCURACY_MIN_ANSWERS) return null;
+  const correct = recent.filter(r => r.correct).length;
+  return correct / recent.length;
+}
+
+/** Level caps adjusted by recent accuracy (widen when hot, narrow when struggling). */
+function getEffectiveFactCaps() {
+  let tier = getLevelCapTierIndex(gameState.playerLevel);
+  const accuracy = getRecentAccuracy();
+  if (accuracy !== null) {
+    if (accuracy >= ACCURACY_WIDEN_THRESHOLD) {
+      tier = Math.min(FACT_CAP_TIERS.length - 1, tier + 1);
+    } else if (accuracy <= ACCURACY_NARROW_THRESHOLD) {
+      tier = Math.max(0, tier - 1);
+    }
+  }
+  return FACT_CAP_TIERS[tier];
+}
+
+function getAllFactsProductsForCaps(maxLowFactor, maxHighFactor) {
+  const products = new Set();
+  for (let i = 2; i <= maxLowFactor; i++) {
+    for (let j = 2; j <= maxHighFactor; j++) products.add(i * j);
+  }
+  return [...products];
+}
+
+function filterTablePoolByCaps(pool, base) {
+  const { maxMultiplier } = getEffectiveFactCaps();
+  return pool.filter(m => m / base <= maxMultiplier);
+}
+
 function getBaseNumber() {
   return gameState.mode;
 }
 
-function generateProblem() {
+function factKeyFromProblem(problem) {
+  if (gameState.mode === 'all') {
+    const lo = Math.min(problem.a, problem.b);
+    const hi = Math.max(problem.a, problem.b);
+    return `${lo}-${hi}`;
+  }
+  return `${problem.a}-${problem.b}`;
+}
+
+function problemFromFactKey(key, caps) {
+  const parts = key.split('-').map(Number);
+  if (parts.length !== 2 || parts.some(n => Number.isNaN(n))) return null;
+  const [first, second] = parts;
+  if (gameState.mode === 'all') {
+    const lo = Math.min(first, second);
+    const hi = Math.max(first, second);
+    if (lo < 2 || hi < 2 || lo > caps.maxLowFactor || hi > caps.maxHighFactor) return null;
+    if (Math.random() < 0.5) {
+      return { a: lo, b: hi, answer: lo * hi };
+    }
+    return { a: hi, b: lo, answer: lo * hi };
+  }
+  const mult = first;
+  const base = second;
+  if (base !== getBaseNumber() || mult < 1 || mult > caps.maxMultiplier) return null;
+  return { a: mult, b: base, answer: mult * base };
+}
+
+function getDefaultAnswerModeForLevel(level) {
+  return level <= 2 ? 'choice' : 'typed';
+}
+
+function factNeedsChoiceReview(problem) {
+  const key = factKeyFromProblem(problem);
+  const stats = gameState.weakFacts?.[key];
+  if (!stats || stats.misses === 0) return false;
+  return (stats.correctStreak || 0) < WEAK_FACT_CHOICE_UNLOCK_STREAK;
+}
+
+function getAnswerModeForProblem(problem) {
+  if (factNeedsChoiceReview(problem)) return 'choice';
+  if (gameState.playerLevel <= 2) return 'choice';
+  return gameState.answerMode || getDefaultAnswerModeForLevel(gameState.playerLevel);
+}
+
+function syncAnswerModeOnLevelUp(newLevel) {
+  if (newLevel === 3) {
+    gameState.answerMode = 'typed';
+    gameState.answerModePromoteStreak = 0;
+    gameState.answerModeDemoteStreak = 0;
+  }
+}
+
+function updateAnswerModeHysteresis(correct, inputMode) {
+  if (gameState.playerLevel <= 2) return;
+
+  if (inputMode === 'choice') {
+    if (correct) {
+      gameState.answerModePromoteStreak = (gameState.answerModePromoteStreak || 0) + 1;
+      if (gameState.answerModePromoteStreak >= ANSWER_MODE_PROMOTE_CORRECT) {
+        gameState.answerMode = 'typed';
+        gameState.answerModePromoteStreak = 0;
+        gameState.answerModeDemoteStreak = 0;
+      }
+    } else {
+      gameState.answerModePromoteStreak = 0;
+    }
+  } else if (inputMode === 'typed') {
+    if (!correct) {
+      gameState.answerModeDemoteStreak = (gameState.answerModeDemoteStreak || 0) + 1;
+      if (gameState.answerModeDemoteStreak >= ANSWER_MODE_DEMOTE_WRONG) {
+        gameState.answerMode = 'choice';
+        gameState.answerModeDemoteStreak = 0;
+        gameState.answerModePromoteStreak = 0;
+      }
+    } else {
+      gameState.answerModeDemoteStreak = 0;
+    }
+  }
+}
+
+function recordAnswerResult(problem, correct, inputMode) {
+  const key = factKeyFromProblem(problem);
+  if (!gameState.recentAnswers) gameState.recentAnswers = [];
+  gameState.recentAnswers.push({ correct, factKey: key, inputMode });
+  if (gameState.recentAnswers.length > ACCURACY_WINDOW) {
+    gameState.recentAnswers.shift();
+  }
+  if (!gameState.weakFacts) gameState.weakFacts = {};
+  if (!gameState.weakFacts[key]) {
+    gameState.weakFacts[key] = { misses: 0, attempts: 0, correctStreak: 0 };
+  }
+  gameState.weakFacts[key].attempts++;
+  if (!correct) {
+    gameState.weakFacts[key].misses++;
+    gameState.weakFacts[key].correctStreak = 0;
+  } else {
+    gameState.weakFacts[key].correctStreak = (gameState.weakFacts[key].correctStreak || 0) + 1;
+  }
+  updateAnswerModeHysteresis(correct, inputMode);
+}
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildMultipleChoiceAnswers(correct) {
+  const choices = new Set([correct]);
+  generateWrongAnswers(correct).forEach(w => choices.add(w));
+  let attempts = 0;
+  while (choices.size < 4 && attempts < 40) {
+    const offset = (Math.floor(Math.random() * 7) - 3) * (Math.random() > 0.5 ? 1 : -1);
+    const val = correct + offset;
+    if (val > 0 && val !== correct) choices.add(val);
+    attempts++;
+  }
+  return shuffleArray([...choices]);
+}
+
+function pickWeakFactForReview(caps) {
+  const entries = Object.entries(gameState.weakFacts || {})
+    .filter(([, stats]) => stats.misses > 0)
+    .map(([key, stats]) => ({ key, stats, problem: problemFromFactKey(key, caps) }))
+    .filter(entry => entry.problem);
+
+  if (entries.length === 0) return null;
+
+  const totalWeight = entries.reduce((sum, e) => sum + e.stats.misses, 0);
+  let roll = Math.random() * totalWeight;
+  for (const entry of entries) {
+    roll -= entry.stats.misses;
+    if (roll <= 0) return entry.problem;
+  }
+  return entries[entries.length - 1].problem;
+}
+
+function generateRandomProblem(caps) {
+  if (gameState.mode === 'all') {
+    const factorLow = randomInt(2, caps.maxLowFactor);
+    const factorHigh = randomInt(2, caps.maxHighFactor);
+    if (Math.random() < 0.5) {
+      return { a: factorLow, b: factorHigh, answer: factorLow * factorHigh };
+    }
+    return { a: factorHigh, b: factorLow, answer: factorLow * factorHigh };
+  }
   const base = getBaseNumber();
-  const multiplier = Math.floor(Math.random() * 12) + 1;
+  const multiplier = randomInt(1, caps.maxMultiplier);
   return { a: multiplier, b: base, answer: multiplier * base };
+}
+
+function generateProblem() {
+  const caps = getEffectiveFactCaps();
+
+  if (gameState.weakFacts && Math.random() < WEAK_FACT_REVIEW_CHANCE) {
+    const review = pickWeakFactForReview(caps);
+    if (review) {
+      const key = factKeyFromProblem(review);
+      if (key !== gameState.lastFactKey) {
+        gameState.lastFactKey = key;
+        return review;
+      }
+    }
+  }
+
+  const maxAttempts = 12;
+  for (let i = 0; i < maxAttempts; i++) {
+    const problem = generateRandomProblem(caps);
+    const key = factKeyFromProblem(problem);
+    if (key !== gameState.lastFactKey || i === maxAttempts - 1) {
+      gameState.lastFactKey = key;
+      return problem;
+    }
+  }
+
+  const problem = generateRandomProblem(caps);
+  gameState.lastFactKey = factKeyFromProblem(problem);
+  return problem;
 }
 
 function generateWrongAnswers(correct) {
   const wrong = new Set();
   if (gameState.mode === 5) {
-    let pool = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60].filter(m => m !== correct);
+    let pool = filterTablePoolByCaps([5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60], 5).filter(m => m !== correct);
     if (correct !== 5) pool = pool.filter(m => m !== 5);
     while (wrong.size < 3 && pool.length > 0) {
       const idx = Math.floor(Math.random() * pool.length);
@@ -272,7 +510,7 @@ function generateWrongAnswers(correct) {
     return [...wrong];
   }
   if (gameState.mode === 6) {
-    let pool = [6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72].filter(m => m !== correct);
+    let pool = filterTablePoolByCaps([6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72], 6).filter(m => m !== correct);
     if (correct !== 6) pool = pool.filter(m => m !== 6);
     while (wrong.size < 3 && pool.length > 0) {
       const idx = Math.floor(Math.random() * pool.length);
@@ -282,7 +520,7 @@ function generateWrongAnswers(correct) {
     return [...wrong];
   }
   if (gameState.mode === 7) {
-    let pool = [7, 14, 21, 28, 35, 42, 49, 56, 63, 70, 77, 84].filter(m => m !== correct);
+    let pool = filterTablePoolByCaps([7, 14, 21, 28, 35, 42, 49, 56, 63, 70, 77, 84], 7).filter(m => m !== correct);
     if (correct !== 7) pool = pool.filter(m => m !== 7);
     while (wrong.size < 3 && pool.length > 0) {
       const idx = Math.floor(Math.random() * pool.length);
@@ -292,7 +530,7 @@ function generateWrongAnswers(correct) {
     return [...wrong];
   }
   if (gameState.mode === 8) {
-    let pool = [8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96].filter(m => m !== correct);
+    let pool = filterTablePoolByCaps([8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96], 8).filter(m => m !== correct);
     if (correct !== 8) pool = pool.filter(m => m !== 8);
     while (wrong.size < 3 && pool.length > 0) {
       const idx = Math.floor(Math.random() * pool.length);
@@ -302,7 +540,7 @@ function generateWrongAnswers(correct) {
     return [...wrong];
   }
   if (gameState.mode === 9) {
-    let pool = [9, 18, 27, 36, 45, 54, 63, 72, 81, 90, 99, 108].filter(m => m !== correct);
+    let pool = filterTablePoolByCaps([9, 18, 27, 36, 45, 54, 63, 72, 81, 90, 99, 108], 9).filter(m => m !== correct);
     if (correct !== 9) pool = pool.filter(m => m !== 9);
     while (wrong.size < 3 && pool.length > 0) {
       const idx = Math.floor(Math.random() * pool.length);
@@ -312,8 +550,28 @@ function generateWrongAnswers(correct) {
     return [...wrong];
   }
   if (gameState.mode === 11) {
-    let pool = [11, 22, 33, 44, 55, 66, 77, 88, 99, 110, 121, 132].filter(m => m !== correct);
+    let pool = filterTablePoolByCaps([11, 22, 33, 44, 55, 66, 77, 88, 99, 110, 121, 132], 11).filter(m => m !== correct);
     if (correct !== 11) pool = pool.filter(m => m !== 11);
+    while (wrong.size < 3 && pool.length > 0) {
+      const idx = Math.floor(Math.random() * pool.length);
+      wrong.add(pool[idx]);
+      pool.splice(idx, 1);
+    }
+    return [...wrong];
+  }
+  if (gameState.mode === 12) {
+    let pool = filterTablePoolByCaps([12, 24, 36, 48, 60, 72, 84, 96, 108, 120, 132, 144], 12).filter(m => m !== correct);
+    if (correct !== 12) pool = pool.filter(m => m !== 12);
+    while (wrong.size < 3 && pool.length > 0) {
+      const idx = Math.floor(Math.random() * pool.length);
+      wrong.add(pool[idx]);
+      pool.splice(idx, 1);
+    }
+    return [...wrong];
+  }
+  if (gameState.mode === 'all') {
+    const caps = getEffectiveFactCaps();
+    let pool = getAllFactsProductsForCaps(caps.maxLowFactor, caps.maxHighFactor).filter(m => m !== correct);
     while (wrong.size < 3 && pool.length > 0) {
       const idx = Math.floor(Math.random() * pool.length);
       wrong.add(pool[idx]);
@@ -375,6 +633,12 @@ function startGame(mode) {
     stepsUntilEncounter: rollNextEncounter(),
     problemsCorrect: 0,
     problemsTotal: 0,
+    recentAnswers: [],
+    weakFacts: {},
+    lastFactKey: null,
+    answerMode: getDefaultAnswerModeForLevel(1),
+    answerModePromoteStreak: 0,
+    answerModeDemoteStreak: 0,
     attackMeter: 0,
     currentBattle: null,
     inBattle: false,
@@ -540,6 +804,7 @@ function startBattle() {
     maxHp: monster.baseHp,
     problem: generateProblem(),
     waitingForAttackChoice: false,
+    wrongHpPenaltyApplied: false,
   };
 
   document.getElementById('encounter-monster-name').textContent = monster.name;
@@ -625,23 +890,95 @@ function renderBattle() {
   document.getElementById('problem-text').textContent =
     `${b.problem.a} × ${b.problem.b} = ?`;
 
-  const answerInput = document.getElementById('answer-input');
-  const answerForm = document.getElementById('answer-form');
-  const submitBtn = document.getElementById('answer-submit-btn');
-  if (answerInput) {
-    answerInput.value = '';
-    answerInput.disabled = false;
-    answerInput.focus();
-  }
-  if (submitBtn) submitBtn.disabled = false;
-
-  answerForm?.removeEventListener('submit', handleAnswerSubmit);
-  answerForm?.addEventListener('submit', handleAnswerSubmit);
+  renderAnswerUI(b.problem);
 
   document.getElementById('feedback-text').textContent = '';
   document.getElementById('feedback-text').className = 'feedback';
+  hideWrongAnswerReveal();
   document.getElementById('attack-buttons-panel').classList.add('hidden');
   detachEnterNextProblemListener();
+}
+
+function showWrongAnswerReveal(problem) {
+  const reveal = document.getElementById('wrong-answer-reveal');
+  const equation = document.getElementById('wrong-answer-reveal-equation');
+  if (equation) {
+    equation.textContent = `${problem.a} × ${problem.b} = ${problem.answer}`;
+  }
+  reveal?.classList.remove('hidden');
+
+  document.querySelectorAll('#answer-choice-panel .answer-btn').forEach(btn => {
+    btn.classList.remove('answer-btn-reveal-correct');
+    if (parseInt(btn.textContent, 10) === problem.answer) {
+      btn.classList.add('answer-btn-reveal-correct');
+    }
+  });
+}
+
+function hideWrongAnswerReveal() {
+  document.getElementById('wrong-answer-reveal')?.classList.add('hidden');
+  document.querySelectorAll('#answer-choice-panel .answer-btn').forEach(btn => {
+    btn.classList.remove('answer-btn-reveal-correct');
+  });
+}
+
+function setAnswerInputsEnabled(enabled) {
+  const mode = gameState.currentBattle?.currentAnswerMode;
+  if (mode === 'choice') {
+    document.querySelectorAll('#answer-choice-panel .answer-btn').forEach(btn => {
+      btn.disabled = !enabled;
+    });
+    return;
+  }
+  const answerInput = document.getElementById('answer-input');
+  const submitBtn = document.getElementById('answer-submit-btn');
+  if (answerInput) {
+    if (!enabled) answerInput.value = '';
+    answerInput.disabled = !enabled;
+    if (enabled) answerInput.focus();
+  }
+  if (submitBtn) submitBtn.disabled = !enabled;
+}
+
+function renderAnswerUI(problem) {
+  const mode = getAnswerModeForProblem(problem);
+  gameState.currentBattle.currentAnswerMode = mode;
+
+  const hint = document.getElementById('answer-mode-hint');
+  const choicePanel = document.getElementById('answer-choice-panel');
+  const answerForm = document.getElementById('answer-form');
+
+  hint?.classList.remove('hidden');
+  answerForm?.removeEventListener('submit', handleAnswerSubmit);
+
+  if (mode === 'choice') {
+    if (hint) {
+      hint.textContent = factNeedsChoiceReview(problem)
+        ? 'Pick one — practicing a fact you missed'
+        : 'Pick one';
+    }
+    choicePanel?.classList.remove('hidden');
+    answerForm?.classList.add('hidden');
+    if (choicePanel) {
+      choicePanel.innerHTML = '';
+      const answers = buildMultipleChoiceAnswers(problem.answer);
+      answers.forEach(ans => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'answer-btn';
+        btn.textContent = ans;
+        btn.onclick = () => handleAnswer(ans);
+        choicePanel.appendChild(btn);
+      });
+    }
+  } else {
+    if (hint) hint.textContent = 'Type your answer';
+    choicePanel?.classList.add('hidden');
+    if (choicePanel) choicePanel.innerHTML = '';
+    answerForm?.classList.remove('hidden');
+    answerForm?.addEventListener('submit', handleAnswerSubmit);
+    setAnswerInputsEnabled(true);
+  }
 }
 
 function handleAnswerSubmit(e) {
@@ -655,15 +992,16 @@ function handleAnswerSubmit(e) {
 
 function handleAnswer(answer) {
   const b = gameState.currentBattle;
-  const answerInput = document.getElementById('answer-input');
-  const submitBtn = document.getElementById('answer-submit-btn');
-  if (answerInput) answerInput.disabled = true;
-  if (submitBtn) submitBtn.disabled = true;
+  setAnswerInputsEnabled(false);
 
   gameState.problemsTotal++;
 
+  const isCorrect = answer === b.problem.answer;
+  const inputMode = b.currentAnswerMode || 'typed';
+  recordAnswerResult(b.problem, isCorrect, inputMode);
+
   const feedback = document.getElementById('feedback-text');
-  if (answer === b.problem.answer) {
+  if (isCorrect) {
     gameState.problemsCorrect++;
     gameState.attackMeter = Math.min(ATTACK_METER_MAX, gameState.attackMeter + METER_PER_CORRECT);
     feedback.textContent = `Correct! +${METER_PER_CORRECT} attack energy!`;
@@ -680,24 +1018,27 @@ function handleAnswer(answer) {
       setTimeout(nextProblem, 1200);
     }
   } else {
-    gameState.playerHealth = Math.max(0, gameState.playerHealth - WRONG_ANSWER_DAMAGE);
-    updatePlayerHealthDisplay();
-    feedback.textContent = `Wrong! -${WRONG_ANSWER_DAMAGE} HP`;
+    const applyHpPenalty = !b.wrongHpPenaltyApplied;
+    if (applyHpPenalty) {
+      b.wrongHpPenaltyApplied = true;
+      gameState.playerHealth = Math.max(0, gameState.playerHealth - WRONG_ANSWER_DAMAGE);
+      updatePlayerHealthDisplay();
+    }
+    feedback.textContent = applyHpPenalty
+      ? `Wrong! -${WRONG_ANSWER_DAMAGE} HP`
+      : 'Wrong! Try again.';
+    feedback.className = 'feedback incorrect';
+    showWrongAnswerReveal(b.problem);
 
     if (gameState.playerHealth <= 0) {
-      feedback.className = 'feedback incorrect';
-      setTimeout(() => gameOver(false), 1200);
+      setTimeout(() => gameOver(false), WRONG_ANSWER_REVEAL_MS);
     } else {
-      feedback.className = 'feedback incorrect';
       setTimeout(() => {
-        if (answerInput) {
-          answerInput.value = '';
-          answerInput.disabled = false;
-          answerInput.focus();
-        }
-        if (submitBtn) submitBtn.disabled = false;
+        hideWrongAnswerReveal();
         feedback.textContent = '';
-      }, 1000);
+        feedback.className = 'feedback';
+        setAnswerInputsEnabled(true);
+      }, WRONG_ANSWER_REVEAL_MS);
     }
   }
 }
@@ -814,6 +1155,7 @@ function goToNextProblem() {
 function nextProblem() {
   gameState.currentBattle.problem = generateProblem();
   gameState.currentBattle.waitingForAttackChoice = false;
+  gameState.currentBattle.wrongHpPenaltyApplied = false;
   renderBattle();
 }
 
@@ -881,6 +1223,7 @@ function catchMonster() {
   gameState.playerHealth = Math.min(gameState.playerMaxHealth, gameState.playerHealth + HEAL_AFTER_CATCH);
   const healed = gameState.playerHealth - beforeHeal;
   gameState.playerLevel++;
+  syncAnswerModeOnLevelUp(gameState.playerLevel);
   gameState.playerAttack = 4 + gameState.playerLevel;
   updatePlayerHealthDisplay();
 
@@ -1089,6 +1432,8 @@ document.getElementById('mode-7').onclick = () => startGame(7);
 document.getElementById('mode-8').onclick = () => startGame(8);
 document.getElementById('mode-9').onclick = () => startGame(9);
 document.getElementById('mode-11').onclick = () => startGame(11);
+document.getElementById('mode-12').onclick = () => startGame(12);
+document.getElementById('mode-all').onclick = () => startGame('all');
 
 const isTouchDevice = 'ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
 if (isTouchDevice) {
