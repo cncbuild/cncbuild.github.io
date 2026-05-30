@@ -1,304 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Multiplication Land - Catch the Monsters!</title>
-  <link rel="icon" href="data:image/png;base64,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" type="image/png">
-  <link rel="icon" href="favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="128x128" href="assets/favicon.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon-180.png">
-  <link rel="stylesheet" href="styles.css">
-</head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colby Kuhns Creations</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1 {
+            margin: 0.5em 15px;
+            text-align: center;
+        }
+        h2 {
+            margin: 0.5em 15px;
+            text-align: center;
+        }
+        ul {
+            margin-top: 1em;
+            text-align: center;
+            list-style-type: none;
+            padding-left: 0;
+        }
+        li {
+            margin-bottom: 15px;
+        }
+        p {
+            margin: 0.5em 15px;
+        }
+        a {
+            text-decoration: none;
+            color: #007BFF;
+            font-size: 1.2em;
+            margin: 0 10px;
+            transition: color 0.3s;
+        }
+        a:hover {
+            color: #0056b3;
+        }
+    </style>
+	</head>
 <body>
-  <div id="game-container">
-    <audio id="theme-music" src="assets/sounds/theme.wav" loop preload="auto"></audio>
-    <audio id="battle-music" src="assets/sounds/battle.wav" loop preload="auto"></audio>
-    <audio id="mega-league-music" src="assets/sounds/mega-league.wav" loop preload="auto"></audio>
-    <audio id="kalaar-music" src="assets/sounds/land-of-kalaar.wav" loop preload="auto"></audio>
-    <!-- Start Screen -->
-    <div id="start-screen">
-      <h1 class="game-title">Multiplication Land</h1>
-      <p class="game-subtitle">Walk the field, encounter cute monsters, and catch them by solving math!</p>
-      <div class="character-selection">
-        <p class="character-label">Choose your wizard:</p>
-        <div class="character-options">
-          <button type="button" id="char-boy" class="character-btn selected" aria-pressed="true">
-            <span class="character-emoji">🧙</span>
-            <span class="character-name">Boy</span>
-          </button>
-          <button type="button" id="char-girl" class="character-btn" aria-pressed="false">
-            <span class="character-emoji">🧙‍♀️</span>
-            <span class="character-name">Girl</span>
-          </button>
-        </div>
-      </div>
-      <div id="save-choice-dialog" class="save-choice-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="save-choice-mode-title">
-        <div class="save-choice-content">
-          <h2 id="save-choice-mode-title" class="save-choice-title"></h2>
-          <p id="save-choice-summary" class="save-choice-summary"></p>
-          <div class="save-choice-buttons">
-            <button type="button" id="save-continue-btn" class="save-choice-btn save-continue-btn">Continue</button>
-            <button type="button" id="save-new-game-btn" class="save-choice-btn save-new-game-btn">New Game</button>
-            <button type="button" id="save-cancel-btn" class="save-choice-btn save-cancel-btn">Cancel</button>
-          </div>
-          <p class="save-new-game-warning">Starting a new game will erase your saved progress for this mode.</p>
-        </div>
-      </div>
-      <div class="mode-buttons">
-        <button id="mode-5" class="mode-btn">
-          <span class="mode-icon">✖5</span>
-          <span class="mode-label">Multiply By 5's</span>
-        </button>
-        <button id="mode-6" class="mode-btn">
-          <span class="mode-icon">✖6</span>
-          <span class="mode-label">Multiply By 6's</span>
-        </button>
-        <button id="mode-7" class="mode-btn">
-          <span class="mode-icon">✖7</span>
-          <span class="mode-label">Multiply By 7's</span>
-        </button>
-        <button id="mode-8" class="mode-btn">
-          <span class="mode-icon">✖8</span>
-          <span class="mode-label">Multiply By 8's</span>
-        </button>
-        <button id="mode-9" class="mode-btn">
-          <span class="mode-icon">✖9</span>
-          <span class="mode-label">Multiply By 9's</span>
-        </button>
-        <button id="mode-11" class="mode-btn">
-          <span class="mode-icon">✖11</span>
-          <span class="mode-label">Multiply By 11's</span>
-        </button>
-        <button id="mode-12" class="mode-btn">
-          <span class="mode-icon">✖12</span>
-          <span class="mode-label">Multiply By 12's</span>
-        </button>
-        <button id="mode-all" class="mode-btn">
-          <span class="mode-icon">✖×</span>
-          <span class="mode-label">All Multiplication Facts</span>
-          <span class="mode-sublabel">2–10 × 2–12</span>
-        </button>
-      </div>
-    </div>
 
-    <!-- Overworld Screen -->
-    <div id="overworld-screen" class="hidden">
-      <div class="hud">
-        <div class="hud-inner">
-          <div class="hud-stat">Level <span id="player-level">1</span></div>
-          <div class="hud-stat">Monsters: <span id="monsters-caught">0</span>/<span id="monsters-total">7</span></div>
-          <div class="hud-stat hud-health">
-            <span>HP</span>
-            <div class="player-health-bar-container">
-              <div id="player-health-bar" class="player-health-bar"></div>
-            </div>
-            <span id="player-health-text">25/25</span>
-          </div>
-        </div>
-        <button type="button" class="music-mute-btn" aria-pressed="false" aria-label="Mute music">Mute</button>
-      </div>
-      <div class="overworld-canvas-wrap">
-        <canvas id="game-canvas" width="640" height="480"></canvas>
-        <div id="zone-title-overlay" class="zone-title-overlay hidden" aria-hidden="true">
-          <p id="zone-title-text" class="zone-title-text"></p>
-        </div>
-      </div>
-      <div id="monster-inventory">
-        <h3 class="inventory-title">Monster Inventory</h3>
-        <div class="inventory-layout">
-          <div id="inventory-slots" class="inventory-slots"></div>
-          <div class="inventory-sohn-divider" aria-hidden="true"></div>
-          <div id="inventory-sohn-slot" class="inventory-sohn-area" aria-label="The Sohn"></div>
-        </div>
-      </div>
-      <p class="controls-hint" id="controls-hint">Use Arrow Keys or WASD to move</p>
-      <div id="dpad-container" class="dpad-container hidden" aria-label="Directional pad for movement">
-        <button type="button" class="dpad-btn dpad-up" data-dy="-1" aria-label="Move up">▲</button>
-        <button type="button" class="dpad-btn dpad-left" data-dx="-1" aria-label="Move left">◀</button>
-        <button type="button" class="dpad-btn dpad-center" aria-hidden="true" tabindex="-1"></button>
-        <button type="button" class="dpad-btn dpad-right" data-dx="1" aria-label="Move right">▶</button>
-        <button type="button" class="dpad-btn dpad-down" data-dy="1" aria-label="Move down">▼</button>
-      </div>
-    </div>
-
-    <!-- Kalaar: Alex help dialog -->
-    <div id="kalaar-alex-dialog-screen" class="hidden">
-      <div class="kalaar-alex-dialog-content">
-        <img id="kalaar-alex-dialog-portrait" class="kalaar-alex-dialog-portrait" src="assets/kalaar/Alex.png" alt="Alex" width="240" height="240" />
-        <p id="kalaar-alex-dialog-speaker" class="kalaar-alex-dialog-speaker">Alex</p>
-        <p id="kalaar-alex-dialog-message" class="kalaar-alex-dialog-message"></p>
-        <p class="kalaar-alex-dialog-hint">Click or press Enter to continue</p>
-      </div>
-    </div>
-
-    <!-- Ultra Sohn final boss reveal (Land of Golda) -->
-    <div id="ultra-sohn-reveal-screen" class="hidden">
-      <div class="ultra-sohn-reveal-content">
-        <p class="ultra-sohn-reveal-message">The Ultra Sohn emerges — the greatest golden power in all the land!</p>
-        <canvas id="ultra-sohn-reveal-canvas" class="ultra-sohn-reveal-portrait" width="220" height="220" aria-hidden="true"></canvas>
-      </div>
-    </div>
-
-    <!-- The Sohn final reveal (before last original battle) -->
-    <div id="sohn-reveal-screen" class="hidden">
-      <div class="sohn-reveal-content">
-        <p class="sohn-reveal-message">The Sohn was creeping in the wild. You've found him at last!</p>
-        <canvas id="sohn-reveal-canvas" class="sohn-reveal-portrait" width="160" height="160" aria-hidden="true"></canvas>
-      </div>
-    </div>
-
-    <!-- Battle Encounter Animation -->
-    <div id="battle-encounter-screen" class="hidden">
-      <div class="encounter-content">
-        <p class="encounter-text">A wild <span id="encounter-monster-name">monster</span> appeared!</p>
-        <canvas id="encounter-monster-canvas" class="encounter-monster" width="96" height="96" aria-hidden="true"></canvas>
-        <div class="encounter-exclaim">!!</div>
-      </div>
-    </div>
-
-    <!-- Battle Screen -->
-    <div id="battle-screen" class="hidden">
-      <div class="battle-hud-bar">
-        <button type="button" class="music-mute-btn" aria-pressed="false" aria-label="Mute music">Mute</button>
-      </div>
-      <div class="battle-layout">
-        <div class="monster-side">
-          <div class="monster-sprite-wrap">
-            <canvas id="monster-sprite-canvas" class="monster-display" width="128" height="128" aria-hidden="true"></canvas>
-            <div id="monster-halo" class="monster-halo-explosion" aria-hidden="true">
-              <span class="halo-ring halo-ring-1"></span>
-              <span class="halo-ring halo-ring-2"></span>
-              <span class="halo-ring halo-ring-3"></span>
-            </div>
-          </div>
-          <div class="monster-info">
-            <span id="monster-name" class="monster-name">Monster</span>
-            <div class="health-bar-container">
-              <div id="monster-health-bar" class="health-bar"></div>
-            </div>
-            <span id="monster-health-text">HP: 30/30</span>
-          </div>
-        </div>
-        <div class="problem-side">
-          <div class="math-problem">
-            <p id="problem-text">5 × 6 = ?</p>
-            <div class="answer-options" id="answer-options">
-              <p id="answer-mode-hint" class="answer-mode-hint hidden" aria-live="polite"></p>
-              <div id="answer-choice-panel" class="answer-choice-panel hidden"></div>
-              <form id="answer-form" class="answer-form hidden">
-                <input type="number" id="answer-input" class="answer-input" min="1" inputmode="numeric" aria-label="Type your answer" />
-                <button type="submit" id="answer-submit-btn" class="answer-btn answer-submit-btn">Submit</button>
-              </form>
-            </div>
-            <p id="feedback-text" class="feedback"></p>
-            <div id="wrong-answer-reveal" class="wrong-answer-reveal hidden" role="alert" aria-live="assertive">
-              <p class="wrong-answer-reveal-label">Correct answer</p>
-              <p id="wrong-answer-reveal-equation" class="wrong-answer-reveal-equation"></p>
-            </div>
-          </div>
-          <div class="player-stats">
-            <div class="attack-meter-row">
-              <span>Attack Energy:</span>
-              <div class="attack-meter-bar-container">
-                <div id="attack-meter-bar" class="attack-meter-bar"></div>
-              </div>
-              <span id="attack-meter-text">0/60</span>
-            </div>
-            <div class="battle-star-row">
-              <button type="button" id="battle-star-btn" class="battle-star-btn hidden" aria-label="Star moves — click for special attacks">⭐</button>
-              <span class="battle-star-label hidden" id="battle-star-label">Star Moves</span>
-            </div>
-            <div id="attack-buttons-panel" class="attack-buttons-panel hidden">
-              <p class="attack-prompt">Use an attack or continue:</p>
-              <div id="attack-buttons" class="attack-buttons"></div>
-              <div id="star-attack-buttons" class="star-attack-buttons hidden"></div>
-              <button type="button" id="next-problem-btn" class="answer-btn next-problem-btn">Next Problem</button>
-            </div>
-            <div class="battle-player-health">
-              <span>Your HP:</span>
-              <div class="player-health-bar-container battle-health">
-                <div id="battle-player-health-bar" class="player-health-bar"></div>
-              </div>
-              <span id="battle-player-health-text">25/25</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div id="battle-monster-inventory" class="monster-inventory battle-inventory">
-        <h3 class="inventory-title">Monster Inventory</h3>
-        <div class="inventory-layout">
-          <div id="battle-inventory-slots" class="inventory-slots"></div>
-          <div class="inventory-sohn-divider" aria-hidden="true"></div>
-          <div id="battle-inventory-sohn-slot" class="inventory-sohn-area" aria-label="The Sohn"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Attack Effect Overlay (full game window) -->
-    <div id="attack-effect-overlay" class="attack-effect-overlay hidden" aria-hidden="true">
-      <div id="attack-effect-content"></div>
-    </div>
-
-    <!-- Level Up Overlay -->
-    <div id="level-up-screen" class="hidden">
-      <div id="level-up-confetti"></div>
-      <div class="level-up-content">
-        <h2 class="level-up-title">Level Up!</h2>
-        <p class="level-up-caught">Monster Caught!</p>
-        <div class="level-up-monster">
-          <canvas id="level-up-monster-canvas" width="96" height="96" aria-hidden="true"></canvas>
-          <p id="level-up-monster-name" class="level-up-monster-name"></p>
-        </div>
-        <p id="level-up-heal-text" class="level-up-heal-text"></p>
-        <div class="level-up-health-wrap" aria-label="Current health after healing">
-          <div class="player-health-bar-container level-up-health">
-            <div id="level-up-health-bar" class="player-health-bar"></div>
-          </div>
-          <span id="level-up-health-text" class="level-up-health-text">25/25</span>
-        </div>
-        <p class="level-up-level">Level <span id="level-up-new-level">2</span></p>
-        <p id="level-up-new-move" class="level-up-new-move hidden"></p>
-        <button type="button" id="level-up-continue-btn" class="level-up-continue-btn">Continue</button>
-      </div>
-    </div>
-
-    <!-- Golden League intro (after catching all pre-golden-league monsters) -->
-    <div id="golden-league-screen" class="hidden">
-      <div class="golden-league-content">
-        <h2 class="golden-league-title">Golden League</h2>
-        <p id="golden-league-message" class="golden-league-message"></p>
-        <p id="golden-league-hint" class="golden-league-hint hidden">Click or press any key to continue</p>
-        <button type="button" id="golden-league-go-btn" class="golden-league-go-btn hidden">Enter the Land of Golda</button>
-      </div>
-    </div>
-
-    <!-- Alex / Mega Team intro (after catching all original monsters) -->
-    <div id="alex-mega-team-screen" class="hidden">
-      <div class="alex-mega-team-content">
-        <h2 class="alex-mega-team-title">Mega Team</h2>
-        <img id="alex-portrait" class="alex-portrait" src="assets/kalaar/Alex.png" alt="Alex" width="200" height="200" />
-        <p id="alex-mega-team-message" class="alex-mega-team-message"></p>
-        <p id="alex-mega-team-hint" class="alex-mega-team-hint hidden">Click or press any key to continue</p>
-        <button type="button" id="alex-mega-team-go-btn" class="alex-mega-go-btn hidden">Go For It</button>
-      </div>
-    </div>
-
-    <!-- Game Over Screen (win or lose) -->
-    <div id="game-over-screen" class="hidden">
-      <h1 id="game-over-title" class="game-over-title"></h1>
-      <p id="game-over-msg" class="game-over-msg"></p>
-      <div class="game-over-stats">
-        <p>Problems: <strong id="problems-stats">0</strong> correct out of <strong id="problems-total">0</strong> total</p>
-        <p>Level reached: <strong id="game-over-level">1</strong></p>
-      </div>
-      <h3 class="inventory-title">Monsters Caught</h3>
-      <div id="game-over-monsters" class="caught-monsters"></div>
-      <button id="play-again-btn" class="mode-btn">Play Again</button>
-    </div>
-  </div>
-
-  <script src="game.js"></script>
-</body>
+    <h1>Welcome to Colby Kuhns Creations!</h1>
+    <p>Explore games, comics, and more!</p>
+    <ul>
+        <li><strong><a href="spellaunch/">Spellaunch</a></strong></li>
+        <li><strong><a href="mland/">Multiplication Land (Version 2)</a></strong></li>
+        <li><a href="multiply-fours/fours.html">Multiply By 4's</a></li>
+        <li><a href="pawkey/">Pawkey (Cats Playing Hockey)</a></li>
+        <li><a href="botl/index.html">Breath of the Landscape (Colby's First Game)</a></li>
+    </ul>
+	
+	    <h2>Clara's Games</h2>
+    <ul>
+        <li><a href="clara/math-party/index-phaser.html">Math Party!</a></li>
+    </ul>
+	
+	</body>
 </html>
