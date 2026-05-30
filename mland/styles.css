@@ -161,6 +161,96 @@ body {
   opacity: 0.85;
 }
 
+.mode-save-hint {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--bg-dark);
+  background: rgba(152, 238, 201, 0.95);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  margin-top: 0.15rem;
+}
+
+.save-choice-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 10, 35, 0.72);
+}
+
+.save-choice-content {
+  width: min(100%, 26rem);
+  padding: 1.5rem;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.08) 100%);
+  border-radius: 20px;
+  border: 4px solid var(--accent-gold);
+  box-shadow: 0 0 40px rgba(244, 208, 63, 0.35);
+}
+
+.save-choice-title {
+  font-size: 1.35rem;
+  color: var(--accent-gold);
+  margin-bottom: 0.75rem;
+}
+
+.save-choice-summary {
+  color: var(--text-cream);
+  font-size: 0.95rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+.save-choice-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.save-choice-btn {
+  padding: 0.85rem 1.25rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 14px;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.save-choice-btn:hover {
+  transform: translateY(-2px);
+}
+
+.save-continue-btn {
+  color: var(--bg-dark);
+  background: linear-gradient(180deg, var(--accent-mint) 0%, #6fd4a8 100%);
+  border-color: #4fb88a;
+}
+
+.save-new-game-btn {
+  color: var(--bg-dark);
+  background: linear-gradient(180deg, var(--accent-gold) 0%, #e6c235 100%);
+  border-color: #c9a52a;
+}
+
+.save-cancel-btn {
+  color: var(--text-cream);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.save-new-game-warning {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  color: rgba(255, 240, 220, 0.75);
+  line-height: 1.4;
+}
+
 /* Overworld */
 #overworld-screen {
   position: relative;
@@ -312,6 +402,12 @@ body {
   transition: width 0.3s ease;
 }
 
+.overworld-canvas-wrap {
+  position: relative;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
 #game-canvas {
   display: block;
   margin: 0 auto;
@@ -320,6 +416,171 @@ body {
   border-radius: 12px;
   background: var(--grass);
   border: 3px solid var(--grass-dark);
+}
+
+#overworld-screen.kalaar-theme {
+  background: linear-gradient(180deg, rgba(20, 0, 0, 0.5) 0%, rgba(40, 0, 0, 0.6) 100%);
+  border-color: #8b0000;
+}
+
+#overworld-screen.kalaar-theme #game-canvas {
+  background: #0a0a0a;
+  border-color: #5c0000;
+}
+
+#overworld-screen.golda-theme {
+  background: linear-gradient(180deg, rgba(80, 60, 10, 0.45) 0%, rgba(50, 35, 5, 0.55) 100%);
+  border-color: var(--accent-gold);
+}
+
+#overworld-screen.golda-theme #game-canvas {
+  background: #3d2e0a;
+  border-color: #c9a227;
+}
+
+.inventory-slot-golden {
+  border-color: rgba(244, 208, 63, 0.5);
+  box-shadow: 0 0 10px rgba(244, 208, 63, 0.35);
+}
+
+.inventory-slot-golden.caught {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 14px rgba(244, 208, 63, 0.55);
+}
+
+.inventory-sohn-divider.hidden,
+.inventory-sohn-area.hidden {
+  display: none !important;
+}
+
+/* Golden League intro */
+#golden-league-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(30, 20, 0, 0.92);
+  border-radius: 20px;
+  z-index: 15;
+}
+
+#golden-league-screen.hidden {
+  display: none !important;
+}
+
+.golden-league-content {
+  text-align: center;
+  max-width: min(440px, 92vw);
+  padding: 1.75rem;
+  background: linear-gradient(180deg, rgba(120, 90, 20, 0.55) 0%, rgba(60, 45, 10, 0.75) 100%);
+  border-radius: 24px;
+  border: 4px solid var(--accent-gold);
+  box-shadow: 0 0 40px rgba(244, 208, 63, 0.45);
+  cursor: pointer;
+}
+
+.golden-league-title {
+  margin: 0 0 1rem;
+  font-size: 2rem;
+  color: var(--accent-gold);
+  text-shadow: 2px 2px 0 var(--bg-dark);
+}
+
+.golden-league-message {
+  margin: 0 0 1rem;
+  font-size: clamp(1rem, 3.5vw, 1.2rem);
+  line-height: 1.5;
+  color: var(--text-cream);
+  min-height: 3.5em;
+}
+
+.golden-league-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 248, 231, 0.65);
+}
+
+.golden-league-go-btn {
+  margin-top: 1rem;
+  padding: 0.6rem 1.5rem;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--bg-dark);
+  background: var(--accent-gold);
+  border: 2px solid #c9a52a;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.golden-league-go-btn:hover {
+  filter: brightness(1.08);
+}
+
+.monster-sprite-wrap.golden-monster-glow .monster-display {
+  border-color: var(--accent-gold);
+  animation: golden-sprite-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes golden-sprite-pulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(244, 208, 63, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(255, 215, 0, 0.85);
+  }
+}
+
+.zone-title-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.zone-title-text {
+  margin: 0;
+  padding: 0.5rem 1.25rem;
+  font-family: inherit;
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
+  font-weight: 600;
+  color: #ff6b6b;
+  text-align: center;
+  letter-spacing: 0.04em;
+  text-shadow:
+    0 0 24px rgba(220, 20, 60, 0.9),
+    0 0 48px rgba(139, 0, 0, 0.5),
+    2px 2px 0 #1a0000,
+    -1px -1px 0 #000;
+}
+
+.zone-title-overlay.zone-title-animate .zone-title-text {
+  animation: zone-title-rise 3.4s ease-in-out forwards;
+}
+
+@keyframes zone-title-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(55%);
+  }
+  18% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  62% {
+    opacity: 1;
+    transform: translateY(-8%);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-28%);
+  }
 }
 
 #monster-inventory {
@@ -337,11 +598,54 @@ body {
   text-align: center;
 }
 
+.inventory-layout {
+  display: flex;
+  align-items: stretch;
+  gap: 0.65rem;
+  justify-content: center;
+}
+
 .inventory-slots {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.inventory-sohn-divider {
+  width: 2px;
+  flex-shrink: 0;
+  align-self: stretch;
+  margin: 0.15rem 0;
+  border-radius: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--accent-gold) 18%,
+    var(--accent-gold) 82%,
+    transparent 100%
+  );
+  opacity: 0.65;
+}
+
+.inventory-sohn-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0 0.15rem;
+}
+
+.inventory-slot-sohn {
+  border-color: rgba(244, 208, 63, 0.45);
+}
+
+.inventory-slot-sohn.caught {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 2px rgba(244, 208, 63, 0.35);
 }
 
 .inventory-slot {
@@ -396,6 +700,147 @@ body {
   font-size: 0.9rem;
   margin-top: 0.5rem;
   opacity: 0.8;
+}
+
+/* The Sohn reveal (final original monster) */
+#sohn-reveal-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 5, 20, 0.88);
+  border-radius: 20px;
+  z-index: 12;
+}
+
+#sohn-reveal-screen.hidden {
+  display: none !important;
+}
+
+.sohn-reveal-content {
+  text-align: center;
+  color: var(--text-cream);
+  max-width: 90%;
+  padding: 1rem;
+}
+
+.sohn-reveal-message {
+  margin: 0 0 1.25rem;
+  font-size: clamp(1.1rem, 4vw, 1.45rem);
+  line-height: 1.45;
+  color: var(--accent-gold);
+  text-shadow: 2px 2px 0 var(--bg-dark);
+}
+
+.sohn-reveal-portrait {
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 0 20px rgba(244, 208, 63, 0.35));
+}
+
+#sohn-reveal-screen.sohn-reveal-animate .sohn-reveal-message,
+#sohn-reveal-screen.sohn-reveal-animate .sohn-reveal-portrait {
+  animation: sohn-reveal-fade 3.8s ease-in-out forwards;
+}
+
+#sohn-reveal-screen.sohn-reveal-animate .sohn-reveal-portrait {
+  animation-delay: 0.15s;
+}
+
+@keyframes sohn-reveal-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.94);
+  }
+  22% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  58% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+}
+
+/* Ultra Sohn final boss */
+#ultra-sohn-reveal-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(40, 30, 0, 0.92);
+  border-radius: 20px;
+  z-index: 13;
+}
+
+#ultra-sohn-reveal-screen.hidden {
+  display: none !important;
+}
+
+.ultra-sohn-reveal-content {
+  text-align: center;
+  max-width: 92%;
+  padding: 1rem;
+}
+
+.ultra-sohn-reveal-message {
+  margin: 0 0 1rem;
+  font-size: clamp(1.15rem, 4vw, 1.5rem);
+  line-height: 1.4;
+  color: var(--accent-gold);
+  text-shadow: 0 0 20px rgba(244, 208, 63, 0.6), 2px 2px 0 var(--bg-dark);
+}
+
+.ultra-sohn-reveal-portrait {
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 0 28px rgba(255, 215, 0, 0.75));
+}
+
+#ultra-sohn-reveal-screen.ultra-sohn-reveal-animate .ultra-sohn-reveal-message,
+#ultra-sohn-reveal-screen.ultra-sohn-reveal-animate .ultra-sohn-reveal-portrait {
+  animation: sohn-reveal-fade 4.2s ease-in-out forwards;
+}
+
+#ultra-sohn-reveal-screen.ultra-sohn-reveal-animate .ultra-sohn-reveal-portrait {
+  animation-delay: 0.12s;
+}
+
+.encounter-monster-ultra {
+  width: 128px !important;
+  height: 128px !important;
+}
+
+.inventory-slot-ultra {
+  border-color: rgba(255, 215, 0, 0.55);
+}
+
+.inventory-slot-ultra.caught {
+  border-color: #ffd700;
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.65);
+}
+
+.monster-sprite-wrap.ultra-boss-glow .monster-display {
+  width: 148px;
+  height: 148px;
+  margin: -10px auto;
+  border-color: #ffd700;
+  animation: ultra-boss-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ultra-boss-pulse {
+  0%, 100% {
+    box-shadow: 0 0 18px rgba(255, 215, 0, 0.55), 0 0 36px rgba(244, 208, 63, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(255, 215, 0, 0.95), 0 0 56px rgba(244, 208, 63, 0.5);
+  }
 }
 
 /* Battle Encounter Animation */
@@ -763,6 +1208,157 @@ body {
 .level-up-continue-btn:focus-visible {
   outline: 3px solid var(--accent-mint);
   outline-offset: 2px;
+}
+
+/* Kalaar Alex help dialog */
+#kalaar-alex-dialog-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 0, 12, 0.92);
+  border-radius: 20px;
+  z-index: 14;
+}
+
+#kalaar-alex-dialog-screen.hidden {
+  display: none !important;
+}
+
+.kalaar-alex-dialog-content {
+  text-align: center;
+  max-width: min(420px, 92vw);
+  padding: 1.5rem;
+  background: linear-gradient(180deg, rgba(60, 0, 0, 0.5) 0%, rgba(20, 0, 0, 0.65) 100%);
+  border-radius: 20px;
+  border: 4px solid #8b0000;
+  box-shadow: 0 0 32px rgba(220, 20, 60, 0.35);
+  cursor: pointer;
+}
+
+.kalaar-alex-dialog-portrait {
+  width: min(240px, 55vw);
+  height: auto;
+  border-radius: 16px;
+  border: 3px solid var(--accent-gold);
+  margin-bottom: 0.75rem;
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.kalaar-alex-dialog-speaker {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+}
+
+.kalaar-alex-dialog-message {
+  margin: 0 0 1rem;
+  font-size: clamp(1rem, 3.5vw, 1.2rem);
+  line-height: 1.45;
+  color: var(--text-cream);
+  min-height: 3.5em;
+}
+
+.kalaar-alex-dialog-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 248, 231, 0.65);
+}
+
+.battle-star-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.battle-star-btn {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  font-size: 1.75rem;
+  line-height: 1;
+  border-radius: 50%;
+  border: 3px solid var(--accent-gold);
+  background: linear-gradient(145deg, #5c4a1a, #f4d03f);
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(244, 208, 63, 0.5);
+  transition: transform 0.15s, box-shadow 0.15s;
+  animation: battle-star-glow 1.5s ease-in-out infinite;
+}
+
+.battle-star-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 18px rgba(244, 208, 63, 0.75);
+}
+
+.battle-star-label {
+  font-size: 0.85rem;
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+
+@keyframes battle-star-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(244, 208, 63, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(244, 208, 63, 0.85); }
+}
+
+.star-attack-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 2px dashed rgba(244, 208, 63, 0.45);
+}
+
+.star-attack-buttons.hidden {
+  display: none !important;
+}
+
+.attack-btn-star {
+  background: linear-gradient(90deg, #3498db, #5dade2);
+  border-color: #2471a3;
+  color: #fff;
+}
+
+.attack-effect-sharp-stars .sharp-star {
+  position: absolute;
+  color: #f4d03f;
+  font-size: 28px;
+  animation: sharp-star-fly 1.2s ease-out forwards;
+}
+
+@keyframes sharp-star-fly {
+  from { opacity: 1; transform: scale(0.5) rotate(0deg); }
+  to { opacity: 0; transform: scale(1.8) rotate(180deg); }
+}
+
+.attack-effect-handcuffs .handcuffs-burst {
+  font-size: 4rem;
+  animation: handcuffs-pop 1.5s ease-out forwards;
+}
+
+.attack-effect-rage .rage-burst {
+  font-size: 3.5rem;
+  animation: rage-shake 1.5s ease-out forwards;
+}
+
+@keyframes handcuffs-pop {
+  0% { transform: scale(0.3); opacity: 0; }
+  40% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@keyframes rage-shake {
+  0%, 100% { transform: translateX(0) scale(1); opacity: 1; }
+  25% { transform: translateX(-12px) scale(1.1); }
+  75% { transform: translateX(12px) scale(1.1); }
+  100% { opacity: 0; }
 }
 
 /* Alex / Mega Team intro overlay */
@@ -1352,6 +1948,10 @@ body {
 
   #monster-inventory {
     padding: 0.5rem 0.75rem;
+  }
+
+  .inventory-layout {
+    gap: 0.45rem;
   }
 
   .inventory-slot {

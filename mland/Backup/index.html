@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multiplication Land - Catch the Monsters!</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="game-container">
+    <!-- Start Screen -->
+    <div id="start-screen">
+      <h1 class="game-title">Multiplication Land</h1>
+      <p class="game-subtitle">Walk the field, encounter cute monsters, and catch them by solving math!</p>
+      <div class="character-selection">
+        <p class="character-label">Choose your wizard:</p>
+        <div class="character-options">
+          <button type="button" id="char-boy" class="character-btn selected" aria-pressed="true">
+            <span class="character-emoji">🧙</span>
+            <span class="character-name">Boy</span>
+          </button>
+          <button type="button" id="char-girl" class="character-btn" aria-pressed="false">
+            <span class="character-emoji">🧙‍♀️</span>
+            <span class="character-name">Girl</span>
+          </button>
+        </div>
+      </div>
+      <div class="mode-buttons">
+        <button id="mode-5" class="mode-btn">
+          <span class="mode-icon">✖5</span>
+          <span class="mode-label">Multiply By 5's</span>
+        </button>
+        <button id="mode-6" class="mode-btn">
+          <span class="mode-icon">✖6</span>
+          <span class="mode-label">Multiply By 6's</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Overworld Screen -->
+    <div id="overworld-screen" class="hidden">
+      <div class="hud">
+        <div class="hud-stat">Level <span id="player-level">1</span></div>
+        <div class="hud-stat">Monsters: <span id="monsters-caught">0</span>/<span id="monsters-total">7</span></div>
+        <div class="hud-stat hud-health">
+          <span>HP</span>
+          <div class="player-health-bar-container">
+            <div id="player-health-bar" class="player-health-bar"></div>
+          </div>
+          <span id="player-health-text">25/25</span>
+        </div>
+      </div>
+      <canvas id="game-canvas" width="640" height="480"></canvas>
+      <div id="monster-inventory">
+        <h3 class="inventory-title">Monster Inventory</h3>
+        <div id="inventory-slots" class="inventory-slots"></div>
+      </div>
+      <p class="controls-hint" id="controls-hint">Use Arrow Keys or WASD to move</p>
+      <div id="dpad-container" class="dpad-container hidden" aria-label="Directional pad for movement">
+        <button type="button" class="dpad-btn dpad-up" data-dy="-1" aria-label="Move up">▲</button>
+        <button type="button" class="dpad-btn dpad-left" data-dx="-1" aria-label="Move left">◀</button>
+        <button type="button" class="dpad-btn dpad-center" aria-hidden="true" tabindex="-1"></button>
+        <button type="button" class="dpad-btn dpad-right" data-dx="1" aria-label="Move right">▶</button>
+        <button type="button" class="dpad-btn dpad-down" data-dy="1" aria-label="Move down">▼</button>
+      </div>
+    </div>
+
+    <!-- Battle Encounter Animation -->
+    <div id="battle-encounter-screen" class="hidden">
+      <div class="encounter-content">
+        <p class="encounter-text">A wild <span id="encounter-monster-name">monster</span> appeared!</p>
+        <canvas id="encounter-monster-canvas" class="encounter-monster" width="96" height="96" aria-hidden="true"></canvas>
+        <div class="encounter-exclaim">!!</div>
+      </div>
+    </div>
+
+    <!-- Battle Screen -->
+    <div id="battle-screen" class="hidden">
+      <div class="battle-layout">
+        <div class="monster-side">
+          <div class="monster-sprite-wrap">
+            <canvas id="monster-sprite-canvas" class="monster-display" width="128" height="128" aria-hidden="true"></canvas>
+            <div id="monster-halo" class="monster-halo-explosion" aria-hidden="true">
+              <span class="halo-ring halo-ring-1"></span>
+              <span class="halo-ring halo-ring-2"></span>
+              <span class="halo-ring halo-ring-3"></span>
+            </div>
+          </div>
+          <div class="monster-info">
+            <span id="monster-name" class="monster-name">Monster</span>
+            <div class="health-bar-container">
+              <div id="monster-health-bar" class="health-bar"></div>
+            </div>
+            <span id="monster-health-text">HP: 30/30</span>
+          </div>
+        </div>
+        <div class="problem-side">
+          <div class="math-problem">
+            <p id="problem-text">5 × 6 = ?</p>
+            <div class="answer-options" id="answer-options"></div>
+            <p id="feedback-text" class="feedback"></p>
+          </div>
+          <div class="player-stats">
+            <div class="attack-meter-row">
+              <span>Attack Energy:</span>
+              <div class="attack-meter-bar-container">
+                <div id="attack-meter-bar" class="attack-meter-bar"></div>
+              </div>
+              <span id="attack-meter-text">0/60</span>
+            </div>
+            <div id="attack-buttons-panel" class="attack-buttons-panel hidden">
+              <p class="attack-prompt">Use an attack or continue:</p>
+              <div id="attack-buttons" class="attack-buttons"></div>
+              <button type="button" id="next-problem-btn" class="answer-btn next-problem-btn">Next Problem</button>
+            </div>
+            <div class="battle-player-health">
+              <span>Your HP:</span>
+              <div class="player-health-bar-container battle-health">
+                <div id="battle-player-health-bar" class="player-health-bar"></div>
+              </div>
+              <span id="battle-player-health-text">25/25</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="battle-monster-inventory" class="monster-inventory battle-inventory">
+        <h3 class="inventory-title">Monster Inventory</h3>
+        <div id="battle-inventory-slots" class="inventory-slots"></div>
+      </div>
+    </div>
+
+    <!-- Attack Effect Overlay (full game window) -->
+    <div id="attack-effect-overlay" class="attack-effect-overlay hidden" aria-hidden="true">
+      <div id="attack-effect-content"></div>
+    </div>
+
+    <!-- Level Up Overlay -->
+    <div id="level-up-screen" class="hidden">
+      <div id="level-up-confetti"></div>
+      <div class="level-up-content">
+        <h2 class="level-up-title">Level Up!</h2>
+        <p class="level-up-caught">Monster Caught!</p>
+        <div class="level-up-monster">
+          <canvas id="level-up-monster-canvas" width="96" height="96" aria-hidden="true"></canvas>
+          <p id="level-up-monster-name" class="level-up-monster-name"></p>
+        </div>
+        <p class="level-up-level">Level <span id="level-up-new-level">2</span></p>
+        <p id="level-up-new-move" class="level-up-new-move hidden"></p>
+        <button type="button" id="level-up-continue-btn" class="level-up-continue-btn">Continue</button>
+      </div>
+    </div>
+
+    <!-- Game Over Screen (win or lose) -->
+    <div id="game-over-screen" class="hidden">
+      <h1 id="game-over-title" class="game-over-title"></h1>
+      <p id="game-over-msg" class="game-over-msg"></p>
+      <div class="game-over-stats">
+        <p>Problems: <strong id="problems-stats">0</strong> correct out of <strong id="problems-total">0</strong> total</p>
+        <p>Level reached: <strong id="game-over-level">1</strong></p>
+      </div>
+      <h3 class="inventory-title">Monsters Caught</h3>
+      <div id="game-over-monsters" class="caught-monsters"></div>
+      <button id="play-again-btn" class="mode-btn">Play Again</button>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
